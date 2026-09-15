@@ -1,4 +1,4 @@
-# Car Service Platform
+# El7a2ny Car Service Platform
 
 Production-oriented monorepo foundation for a car service platform serving Customer, Admin, and Super Admin roles. This repository currently contains framework setup and infrastructure only; no business features, data models, authentication flows, or domain APIs have been implemented.
 
