@@ -1,0 +1,10 @@
+{
+  "extends": "@car-platform/typescript-config/node.json",
+  "compilerOptions": {
+    "declaration": false,
+    "rootDir": ".",
+    "outDir": "dist"
+  },
+  "include": ["src", "prisma", "prisma.config.ts"],
+  "exclude": ["dist", "node_modules", "src/generated", "tests"]
+}

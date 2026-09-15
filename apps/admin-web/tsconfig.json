@@ -1,0 +1,4 @@
+{
+  "extends": "@car-platform/typescript-config/react-web.json",
+  "include": ["src", "vite.config.ts"]
+}

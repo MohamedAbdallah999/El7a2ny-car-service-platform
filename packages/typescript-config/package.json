@@ -1,0 +1,26 @@
+{
+  "name": "@car-platform/typescript-config",
+  "version": "0.1.0",
+  "private": true,
+  "files": [
+    "*.json"
+  ],
+  "exports": {
+    "./base.json": "./base.json",
+    "./react-web.json": "./react-web.json",
+    "./react-native.json": "./react-native.json",
+    "./node.json": "./node.json"
+  },
+  "scripts": {
+    "build": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "test": "node --test",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@car-platform/eslint-config": "workspace:*",
+    "@react-native/typescript-config": "0.87.1",
+    "eslint": "^10.10.0",
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "name": "@car-platform/ui-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint src",
+    "test": "node --test",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@car-platform/eslint-config": "workspace:*",
+    "@car-platform/typescript-config": "workspace:*",
+    "@react-native/typescript-config": "0.87.1",
+    "@types/react": "^19.2.0",
+    "eslint": "^10.10.0",
+    "react": "19.2.3",
+    "react-native": "0.87.1",
+    "typescript": "^6.0.3"
+  },
+  "peerDependencies": {
+    "react": ">=19",
+    "react-native": ">=0.87"
+  }
+}

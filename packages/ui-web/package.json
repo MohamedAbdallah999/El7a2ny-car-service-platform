@@ -1,0 +1,34 @@
+{
+  "name": "@car-platform/ui-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint src",
+    "test": "node --test",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@car-platform/eslint-config": "workspace:*",
+    "@car-platform/typescript-config": "workspace:*",
+    "@types/react": "^19.3.0",
+    "eslint": "^10.10.0",
+    "react": "^19.3.0",
+    "typescript": "^6.0.3"
+  },
+  "peerDependencies": {
+    "react": ">=19"
+  }
+}

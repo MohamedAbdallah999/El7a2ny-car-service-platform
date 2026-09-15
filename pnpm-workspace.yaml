@@ -1,0 +1,12 @@
+packages:
+  - apps/*
+  - backend
+  - packages/*
+
+minimumReleaseAge: 0
+
+allowBuilds:
+  "@prisma/engines": true
+  esbuild: true
+  pnpm: true
+  prisma: true

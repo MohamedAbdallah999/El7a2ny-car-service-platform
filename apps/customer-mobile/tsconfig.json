@@ -1,0 +1,5 @@
+{
+  "extends": "@car-platform/typescript-config/react-native.json",
+  "include": ["src/**/*.ts", "src/**/*.tsx", "App.tsx", "__tests__/**/*.tsx"],
+  "exclude": ["**/node_modules", "**/Pods"]
+}
