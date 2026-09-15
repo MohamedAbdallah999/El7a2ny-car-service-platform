@@ -6,3 +6,1703 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// =========================================================================
+// ENUMS (36)
+// =========================================================================
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum SessionPlatform {
+  WEB
+  IOS
+  ANDROID
+  OTHER
+}
+
+enum VerificationTokenType {
+  EMAIL_VERIFICATION
+  PHONE_VERIFICATION
+  PASSWORD_RESET
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum BusinessType {
+  GARAGE
+  WORKSHOP
+  SERVICE_CENTER
+  CAR_DEALERSHIP
+  TIRE_SHOP
+  CAR_WASH
+  DETAILING
+  AUTO_ELECTRICAL
+  BODY_REPAIR
+  SPARE_PARTS
+  MULTI_SERVICE
+  OTHER
+}
+
+enum BusinessStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+enum VerificationStatus {
+  PENDING
+  UNDER_REVIEW
+  VERIFIED
+  REJECTED
+}
+
+enum BranchStatus {
+  ACTIVE
+  INACTIVE
+  CLOSED
+}
+
+enum BusinessDocumentType {
+  BUSINESS_LICENSE
+  TAX_DOCUMENT
+  OWNER_ID
+  COMMERCIAL_REGISTRATION
+  OTHER
+}
+
+enum DocumentVerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum FuelType {
+  PETROL
+  DIESEL
+  HYBRID
+  ELECTRIC
+  LPG
+  OTHER
+}
+
+enum TransmissionType {
+  MANUAL
+  AUTOMATIC
+  CVT
+  DCT
+  OTHER
+}
+
+enum ServiceRequestStatus {
+  PENDING
+  REVIEWING
+  QUOTED
+  APPROVED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  REJECTED
+}
+
+enum ServiceRequestPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  ARRIVED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+  REJECTED
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  OUT_OF_STOCK
+  DISCONTINUED
+  SUSPENDED
+}
+
+enum InventoryMovementType {
+  PURCHASE
+  SALE
+  RETURN
+  ADJUSTMENT
+  DAMAGE
+  TRANSFER_IN
+  TRANSFER_OUT
+  RESERVATION
+  RELEASE
+}
+
+enum CartStatus {
+  ACTIVE
+  ABANDONED
+  CONVERTED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  COMPLETED
+  CANCELLED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum ShipmentStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  FAILED
+  RETURNED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CARD
+  CASH
+  WALLET
+  BANK_TRANSFER
+  ONLINE_PAYMENT
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  CANCELLED
+}
+
+enum RefundStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum ReviewStatus {
+  PENDING
+  PUBLISHED
+  HIDDEN
+  REJECTED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+enum NotificationType {
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  BOOKING_REMINDER
+  ORDER_CONFIRMED
+  ORDER_SHIPPED
+  ORDER_DELIVERED
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+  SERVICE_REQUEST_UPDATED
+  NEW_MESSAGE
+  PROMOTION
+  SYSTEM
+}
+
+enum PushPlatform {
+  IOS
+  ANDROID
+  WEB
+}
+
+enum DisputeReason {
+  PAYMENT_ISSUE
+  SERVICE_ISSUE
+  PRODUCT_ISSUE
+  ORDER_ISSUE
+  BOOKING_ISSUE
+  REFUND_ISSUE
+  QUALITY_ISSUE
+  OTHER
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  WAITING_FOR_CUSTOMER
+  WAITING_FOR_BUSINESS
+  RESOLVED
+  REJECTED
+  CLOSED
+}
+
+enum SupportCategory {
+  ACCOUNT
+  PAYMENT
+  BOOKING
+  ORDER
+  SERVICE
+  PRODUCT
+  BUSINESS
+  TECHNICAL
+  OTHER
+}
+
+enum SupportPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum SupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_FOR_USER
+  RESOLVED
+  CLOSED
+}
+
+enum BusinessTransactionType {
+  SALE
+  SERVICE_PAYMENT
+  REFUND
+  COMMISSION
+  PAYOUT
+  ADJUSTMENT
+}
+
+enum FinancialTransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// =========================================================================
+// 1. AUTHENTICATION & USERS
+// =========================================================================
+
+model User {
+  id              String     @id @default(uuid()) @db.Uuid
+  email           String     @unique @db.VarChar(255)
+  phone           String?    @unique @db.VarChar(30)
+  passwordHash    String     @map("password_hash")
+  firstName       String     @map("first_name") @db.VarChar(100)
+  lastName        String     @map("last_name") @db.VarChar(100)
+  profileImageUrl String?    @map("profile_image_url")
+  role            UserRole
+  status          UserStatus @default(ACTIVE)
+  emailVerified   Boolean    @default(false) @map("email_verified")
+  phoneVerified   Boolean    @default(false) @map("phone_verified")
+  lastLoginAt     DateTime?  @map("last_login_at")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  deletedAt       DateTime?  @map("deleted_at")
+
+  customer                    Customer?
+  admin                       Admin?
+  sessions                    UserSession[]
+  verificationTokens          UserVerificationToken[]
+  notifications               Notification[]
+  pushDevices                 PushDevice[]
+  auditLogs                   AuditLog[]
+  reviewedDocuments           BusinessVerificationDocument[] @relation("DocumentReviewedBy")
+  serviceRequestMessages      ServiceRequestMessage[]        @relation("ServiceRequestMessageSender")
+  bookingStatusChanges        BookingStatusHistory[]         @relation("BookingStatusChangedBy")
+  inventoryMovementsPerformed InventoryMovement[]            @relation("InventoryMovementPerformedBy")
+  resolvedDisputes            Dispute[]                      @relation("DisputeResolvedBy")
+  disputeMessages             DisputeMessage[]               @relation("DisputeMessageSender")
+  disputeAttachmentsUploaded  DisputeAttachment[]            @relation("DisputeAttachmentUploadedBy")
+  supportTicketsCreated       SupportTicket[]                @relation("SupportTicketCreatedBy")
+  supportTicketsAssigned      SupportTicket[]                @relation("SupportTicketAssignedTo")
+  supportTicketMessages       SupportTicketMessage[]         @relation("SupportTicketMessageSender")
+  platformSettingsUpdated     PlatformSetting[]              @relation("PlatformSettingUpdatedBy")
+
+  @@index([role])
+  @@index([status])
+  @@map("users")
+}
+
+model UserSession {
+  id               String          @id @default(uuid()) @db.Uuid
+  userId           String          @map("user_id") @db.Uuid
+  refreshTokenHash String          @map("refresh_token_hash")
+  deviceId         String?         @map("device_id") @db.VarChar(255)
+  deviceName       String?         @map("device_name") @db.VarChar(255)
+  platform         SessionPlatform
+  ipAddress        String?         @map("ip_address") @db.Inet
+  userAgent        String?         @map("user_agent")
+  expiresAt        DateTime        @map("expires_at")
+  revokedAt        DateTime?       @map("revoked_at")
+  createdAt        DateTime        @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("user_sessions")
+}
+
+model UserVerificationToken {
+  id        String                @id @default(uuid()) @db.Uuid
+  userId    String                @map("user_id") @db.Uuid
+  tokenHash String                @map("token_hash")
+  type      VerificationTokenType
+  expiresAt DateTime              @map("expires_at")
+  usedAt    DateTime?             @map("used_at")
+  createdAt DateTime              @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@map("user_verification_tokens")
+}
+
+model Customer {
+  id                String    @id @default(uuid()) @db.Uuid
+  userId            String    @unique @map("user_id") @db.Uuid
+  dateOfBirth       DateTime? @map("date_of_birth") @db.Date
+  gender            Gender?
+  preferredLanguage String?   @map("preferred_language") @db.VarChar(10)
+  preferredCurrency String?   @map("preferred_currency") @db.VarChar(10)
+  marketingConsent  Boolean   @default(false) @map("marketing_consent")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  user                     User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  addresses                CustomerAddress[]
+  vehicles                 Vehicle[]
+  bookings                 Booking[]
+  serviceRequests          ServiceRequest[]
+  orders                   Order[]
+  payments                 Payment[]
+  businessReviews          BusinessReview[]
+  productReviews           ProductReview[]
+  favoriteBusinesses       FavoriteBusiness[]
+  favoriteProducts         FavoriteProduct[]
+  recentlyViewedBusinesses RecentlyViewedBusiness[]
+  recentlyViewedProducts   RecentlyViewedProduct[]
+  promotionUsages          PromotionUsage[]
+  disputes                 Dispute[]
+  carts                    Cart[]
+
+  @@map("customers")
+}
+
+model Admin {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businesses Business[]
+
+  @@map("admins")
+}
+
+// =========================================================================
+// 2. BUSINESSES
+// =========================================================================
+
+model Business {
+  id                 String             @id @default(uuid()) @db.Uuid
+  adminId            String             @map("admin_id") @db.Uuid
+  name               String             @db.VarChar(200)
+  slug               String             @unique @db.VarChar(220)
+  description        String?
+  logoUrl            String?            @map("logo_url")
+  coverImageUrl      String?            @map("cover_image_url")
+  businessType       BusinessType       @map("business_type")
+  registrationNumber String?            @map("registration_number") @db.VarChar(100)
+  taxNumber          String?            @map("tax_number") @db.VarChar(100)
+  email              String?            @db.VarChar(255)
+  phone              String?            @db.VarChar(30)
+  website            String?
+  status             BusinessStatus     @default(ACTIVE)
+  verificationStatus VerificationStatus @default(PENDING) @map("verification_status")
+  averageRating      Decimal            @default(0) @map("average_rating") @db.Decimal(3, 2)
+  totalReviews       Int                @default(0) @map("total_reviews")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  deletedAt          DateTime?          @map("deleted_at")
+
+  // adminId onDelete: Restrict — ownership can never be silently orphaned;
+  // the app must reassign or soft-delete the business before removing an admin.
+  admin                 Admin                          @relation(fields: [adminId], references: [id], onDelete: Restrict)
+  branches              BusinessBranch[]
+  verificationDocuments BusinessVerificationDocument[]
+  services              Service[]
+  products              Product[]
+  inventories           Inventory[]
+  bookings              Booking[]
+  serviceRequests       ServiceRequest[]
+  reviews               BusinessReview[]
+  promotions            Promotion[]
+  favoritedBy           FavoriteBusiness[]
+  recentlyViewedBy      RecentlyViewedBusiness[]
+  disputes              Dispute[]
+  commissionRules       BusinessCommissionRule[]
+  transactions          BusinessTransaction[]
+  payouts               BusinessPayout[]
+  orderItems            OrderItem[]
+
+  @@index([adminId])
+  @@index([status])
+  @@index([verificationStatus])
+  @@index([businessType])
+  @@map("businesses")
+}
+
+model BusinessBranch {
+  id           String       @id @default(uuid()) @db.Uuid
+  businessId   String       @map("business_id") @db.Uuid
+  name         String       @db.VarChar(200)
+  description  String?
+  phone        String?      @db.VarChar(30)
+  email        String?      @db.VarChar(255)
+  addressLine1 String       @map("address_line_1")
+  addressLine2 String?      @map("address_line_2")
+  city         String       @db.VarChar(100)
+  state        String?      @db.VarChar(100)
+  country      String       @db.VarChar(100)
+  postalCode   String?      @map("postal_code") @db.VarChar(20)
+  latitude     Decimal?     @db.Decimal(10, 7)
+  longitude    Decimal?     @db.Decimal(10, 7)
+  isPrimary    Boolean      @default(false) @map("is_primary")
+  status       BranchStatus @default(ACTIVE)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  business        Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  hours           BusinessHour[]
+  holidays        BusinessHoliday[]
+  services        Service[]
+  inventories     Inventory[]
+  bookings        Booking[]
+  serviceRequests ServiceRequest[]
+
+  @@index([businessId])
+  @@index([city])
+  @@index([status])
+  @@map("business_branches")
+}
+
+// dayOfWeek convention: 0 = Sunday, 1 = Monday, ... 6 = Saturday.
+model BusinessHour {
+  id          String    @id @default(uuid()) @db.Uuid
+  branchId    String    @map("branch_id") @db.Uuid
+  dayOfWeek   Int       @map("day_of_week")
+  openingTime DateTime? @map("opening_time") @db.Time
+  closingTime DateTime? @map("closing_time") @db.Time
+  isClosed    Boolean   @default(false) @map("is_closed")
+
+  branch BusinessBranch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([branchId, dayOfWeek])
+  @@map("business_hours")
+}
+
+model BusinessHoliday {
+  id        String   @id @default(uuid()) @db.Uuid
+  branchId  String   @map("branch_id") @db.Uuid
+  date      DateTime @db.Date
+  reason    String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  branch BusinessBranch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([branchId, date])
+  @@map("business_holidays")
+}
+
+model BusinessVerificationDocument {
+  id               String                     @id @default(uuid()) @db.Uuid
+  businessId       String                     @map("business_id") @db.Uuid
+  documentType     BusinessDocumentType       @map("document_type")
+  documentNumber   String?                    @map("document_number") @db.VarChar(150)
+  fileUrl          String                     @map("file_url")
+  status           DocumentVerificationStatus @default(PENDING)
+  reviewedByUserId String?                    @map("reviewed_by_user_id") @db.Uuid
+  reviewedAt       DateTime?                  @map("reviewed_at")
+  rejectionReason  String?                    @map("rejection_reason")
+  createdAt        DateTime                   @default(now()) @map("created_at")
+
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  reviewedBy User?    @relation("DocumentReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([businessId])
+  @@index([status])
+  @@map("business_verification_documents")
+}
+
+// =========================================================================
+// 3. CUSTOMERS & VEHICLES
+// =========================================================================
+
+model CustomerAddress {
+  id            String   @id @default(uuid()) @db.Uuid
+  customerId    String   @map("customer_id") @db.Uuid
+  label         String?  @db.VarChar(100)
+  recipientName String   @map("recipient_name") @db.VarChar(200)
+  phone         String   @db.VarChar(30)
+  addressLine1  String   @map("address_line_1")
+  addressLine2  String?  @map("address_line_2")
+  city          String   @db.VarChar(100)
+  state         String?  @db.VarChar(100)
+  country       String   @db.VarChar(100)
+  postalCode    String?  @map("postal_code") @db.VarChar(20)
+  latitude      Decimal? @db.Decimal(10, 7)
+  longitude     Decimal? @db.Decimal(10, 7)
+  isDefault     Boolean  @default(false) @map("is_default")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  orders   Order[]
+
+  @@index([customerId])
+  @@map("customer_addresses")
+}
+
+model VehicleMake {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique @db.VarChar(100)
+  logoUrl   String?  @map("logo_url")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  models                        VehicleModel[]
+  vehicles                      Vehicle[]
+  serviceVehicleCompatibilities ServiceVehicleCompatibility[]
+  productVehicleCompatibilities ProductVehicleCompatibility[]
+
+  @@map("vehicle_makes")
+}
+
+model VehicleModel {
+  id        String   @id @default(uuid()) @db.Uuid
+  makeId    String   @map("make_id") @db.Uuid
+  name      String   @db.VarChar(100)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  make                          VehicleMake                   @relation(fields: [makeId], references: [id], onDelete: Restrict)
+  vehicles                      Vehicle[]
+  serviceVehicleCompatibilities ServiceVehicleCompatibility[]
+  productVehicleCompatibilities ProductVehicleCompatibility[]
+
+  @@unique([makeId, name])
+  @@map("vehicle_models")
+}
+
+model Vehicle {
+  id           String            @id @default(uuid()) @db.Uuid
+  customerId   String            @map("customer_id") @db.Uuid
+  makeId       String            @map("make_id") @db.Uuid
+  modelId      String            @map("model_id") @db.Uuid
+  year         Int
+  trim         String?           @db.VarChar(100)
+  color        String?           @db.VarChar(50)
+  licensePlate String?           @map("license_plate") @db.VarChar(30)
+  vin          String?           @db.VarChar(50)
+  mileage      Int?
+  fuelType     FuelType?         @map("fuel_type")
+  transmission TransmissionType?
+  nickname     String?           @db.VarChar(100)
+  imageUrl     String?           @map("image_url")
+  isPrimary    Boolean           @default(false) @map("is_primary")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+
+  customer        Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  make            VehicleMake      @relation(fields: [makeId], references: [id], onDelete: Restrict)
+  model           VehicleModel     @relation(fields: [modelId], references: [id], onDelete: Restrict)
+  serviceRequests ServiceRequest[]
+  bookings        Booking[]
+
+  @@index([customerId])
+  @@index([makeId])
+  @@index([modelId])
+  @@index([vin])
+  @@index([licensePlate])
+  @@map("vehicles")
+}
+
+model FavoriteBusiness {
+  id         String   @id @default(uuid()) @db.Uuid
+  customerId String   @map("customer_id") @db.Uuid
+  businessId String   @map("business_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, businessId])
+  @@map("favorite_businesses")
+}
+
+model FavoriteProduct {
+  id         String   @id @default(uuid()) @db.Uuid
+  customerId String   @map("customer_id") @db.Uuid
+  productId  String   @map("product_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, productId])
+  @@map("favorite_products")
+}
+
+model RecentlyViewedBusiness {
+  id         String   @id @default(uuid()) @db.Uuid
+  customerId String   @map("customer_id") @db.Uuid
+  businessId String   @map("business_id") @db.Uuid
+  viewedAt   DateTime @default(now()) @map("viewed_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, viewedAt])
+  @@map("recently_viewed_businesses")
+}
+
+model RecentlyViewedProduct {
+  id         String   @id @default(uuid()) @db.Uuid
+  customerId String   @map("customer_id") @db.Uuid
+  productId  String   @map("product_id") @db.Uuid
+  viewedAt   DateTime @default(now()) @map("viewed_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, viewedAt])
+  @@map("recently_viewed_products")
+}
+
+// =========================================================================
+// 4. SERVICES
+// =========================================================================
+
+model ServiceCategory {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(150)
+  slug        String   @unique @db.VarChar(170)
+  description String?
+  iconUrl     String?  @map("icon_url")
+  imageUrl    String?  @map("image_url")
+  parentId    String?  @map("parent_id") @db.Uuid
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  parent   ServiceCategory?  @relation("ServiceCategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  children ServiceCategory[] @relation("ServiceCategoryHierarchy")
+  services Service[]
+
+  @@index([parentId])
+  @@map("service_categories")
+}
+
+model Service {
+  id                 String    @id @default(uuid()) @db.Uuid
+  businessId         String    @map("business_id") @db.Uuid
+  branchId           String?   @map("branch_id") @db.Uuid
+  categoryId         String    @map("category_id") @db.Uuid
+  name               String    @db.VarChar(200)
+  description        String?
+  durationMinutes    Int       @map("duration_minutes")
+  basePrice          Decimal   @map("base_price") @db.Decimal(12, 2)
+  minPrice           Decimal?  @map("min_price") @db.Decimal(12, 2)
+  maxPrice           Decimal?  @map("max_price") @db.Decimal(12, 2)
+  currency           String    @default("EGP") @db.VarChar(10)
+  isOnlineBooking    Boolean   @default(true) @map("is_online_booking")
+  requiresInspection Boolean   @default(false) @map("requires_inspection")
+  isActive           Boolean   @default(true) @map("is_active")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  deletedAt          DateTime? @map("deleted_at")
+
+  // branchId onDelete: SetNull — losing a branch demotes the service to
+  // business-wide rather than deleting it (services can be branch-scoped or
+  // business-wide per spec section 27).
+  business               Business                      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  branch                 BusinessBranch?               @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  category               ServiceCategory               @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  vehicleCompatibilities ServiceVehicleCompatibility[]
+  serviceRequests        ServiceRequest[]
+  bookings               Booking[]
+  promotionServices      PromotionService[]
+
+  @@index([businessId])
+  @@index([branchId])
+  @@index([categoryId])
+  @@index([isActive])
+  @@map("services")
+}
+
+model ServiceVehicleCompatibility {
+  id        String  @id @default(uuid()) @db.Uuid
+  serviceId String  @map("service_id") @db.Uuid
+  makeId    String? @map("make_id") @db.Uuid
+  modelId   String? @map("model_id") @db.Uuid
+  yearFrom  Int?    @map("year_from")
+  yearTo    Int?    @map("year_to")
+
+  service Service       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  make    VehicleMake?  @relation(fields: [makeId], references: [id], onDelete: SetNull)
+  model   VehicleModel? @relation(fields: [modelId], references: [id], onDelete: SetNull)
+
+  @@index([serviceId, makeId, modelId])
+  @@map("service_vehicle_compatibility")
+}
+
+model ServiceRequest {
+  id             String                 @id @default(uuid()) @db.Uuid
+  requestNumber  String                 @unique @map("request_number") @db.VarChar(50)
+  customerId     String                 @map("customer_id") @db.Uuid
+  vehicleId      String                 @map("vehicle_id") @db.Uuid
+  businessId     String?                @map("business_id") @db.Uuid
+  branchId       String?                @map("branch_id") @db.Uuid
+  serviceId      String?                @map("service_id") @db.Uuid
+  title          String                 @db.VarChar(200)
+  description    String?
+  status         ServiceRequestStatus   @default(PENDING)
+  priority       ServiceRequestPriority @default(MEDIUM)
+  estimatedPrice Decimal?               @map("estimated_price") @db.Decimal(12, 2)
+  finalPrice     Decimal?               @map("final_price") @db.Decimal(12, 2)
+  createdAt      DateTime               @default(now()) @map("created_at")
+  updatedAt      DateTime               @updatedAt @map("updated_at")
+  completedAt    DateTime?              @map("completed_at")
+  cancelledAt    DateTime?              @map("cancelled_at")
+
+  // customerId / vehicleId onDelete: Restrict — preserves request history;
+  // businessId / branchId / serviceId are nullable (a request may start
+  // general-purpose before a business is matched) so SetNull on delete.
+  customer    Customer                   @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  vehicle     Vehicle                    @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  business    Business?                  @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  branch      BusinessBranch?            @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  service     Service?                   @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  attachments ServiceRequestAttachment[]
+  messages    ServiceRequestMessage[]
+  payments    Payment[]
+  disputes    Dispute[]
+
+  @@index([customerId])
+  @@index([businessId])
+  @@index([vehicleId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("service_requests")
+}
+
+model ServiceRequestAttachment {
+  id               String   @id @default(uuid()) @db.Uuid
+  serviceRequestId String   @map("service_request_id") @db.Uuid
+  fileUrl          String   @map("file_url")
+  fileName         String   @map("file_name") @db.VarChar(255)
+  fileType         String?  @map("file_type") @db.VarChar(100)
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  serviceRequest ServiceRequest @relation(fields: [serviceRequestId], references: [id], onDelete: Cascade)
+
+  @@index([serviceRequestId])
+  @@map("service_request_attachments")
+}
+
+model ServiceRequestMessage {
+  id               String   @id @default(uuid()) @db.Uuid
+  serviceRequestId String   @map("service_request_id") @db.Uuid
+  senderUserId     String   @map("sender_user_id") @db.Uuid
+  message          String
+  isRead           Boolean  @default(false) @map("is_read")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  serviceRequest ServiceRequest @relation(fields: [serviceRequestId], references: [id], onDelete: Cascade)
+  sender         User           @relation("ServiceRequestMessageSender", fields: [senderUserId], references: [id], onDelete: Restrict)
+
+  @@index([serviceRequestId])
+  @@index([createdAt])
+  @@map("service_request_messages")
+}
+
+// =========================================================================
+// 5. BOOKINGS
+// =========================================================================
+
+model Booking {
+  id                 String        @id @default(uuid()) @db.Uuid
+  bookingNumber      String        @unique @map("booking_number") @db.VarChar(50)
+  customerId         String        @map("customer_id") @db.Uuid
+  businessId         String        @map("business_id") @db.Uuid
+  branchId           String        @map("branch_id") @db.Uuid
+  vehicleId          String        @map("vehicle_id") @db.Uuid
+  serviceId          String        @map("service_id") @db.Uuid
+  scheduledDate      DateTime      @map("scheduled_date") @db.Date
+  startTime          DateTime      @map("start_time") @db.Time
+  endTime            DateTime      @map("end_time") @db.Time
+  status             BookingStatus @default(PENDING)
+  customerNotes      String?       @map("customer_notes")
+  businessNotes      String?       @map("business_notes")
+  estimatedPrice     Decimal       @map("estimated_price") @db.Decimal(12, 2)
+  finalPrice         Decimal?      @map("final_price") @db.Decimal(12, 2)
+  currency           String        @default("EGP") @db.VarChar(10)
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+  confirmedAt        DateTime?     @map("confirmed_at")
+  completedAt        DateTime?     @map("completed_at")
+  cancelledAt        DateTime?     @map("cancelled_at")
+  cancellationReason String?       @map("cancellation_reason")
+
+  // All core relations (customer/business/branch/vehicle/service) are
+  // required and Restrict on delete — a booking is a historical transaction
+  // record and must never be cascaded away by deleting one of its parents.
+  customer             Customer               @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  business             Business               @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  branch               BusinessBranch         @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  vehicle              Vehicle                @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  service              Service                @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  attachments          BookingAttachment[]
+  statusHistory        BookingStatusHistory[]
+  payments             Payment[]
+  reviews              BusinessReview[]
+  disputes             Dispute[]
+  promotionUsages      PromotionUsage[]
+  businessTransactions BusinessTransaction[]
+
+  @@index([customerId])
+  @@index([businessId])
+  @@index([branchId])
+  @@index([vehicleId])
+  @@index([serviceId])
+  @@index([scheduledDate])
+  @@index([status])
+  @@map("bookings")
+}
+
+model BookingAttachment {
+  id        String   @id @default(uuid()) @db.Uuid
+  bookingId String   @map("booking_id") @db.Uuid
+  fileUrl   String   @map("file_url")
+  fileName  String   @map("file_name") @db.VarChar(255)
+  fileType  String?  @map("file_type") @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@map("booking_attachments")
+}
+
+model BookingStatusHistory {
+  id              String         @id @default(uuid()) @db.Uuid
+  bookingId       String         @map("booking_id") @db.Uuid
+  oldStatus       BookingStatus? @map("old_status")
+  newStatus       BookingStatus  @map("new_status")
+  changedByUserId String?        @map("changed_by_user_id") @db.Uuid
+  reason          String?
+  createdAt       DateTime       @default(now()) @map("created_at")
+
+  // changedByUserId is nullable/SetNull to allow system-generated status
+  // changes (e.g. an automated no-show or cancellation job) with no human actor.
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  changedBy User?   @relation("BookingStatusChangedBy", fields: [changedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([bookingId])
+  @@map("booking_status_history")
+}
+
+// =========================================================================
+// 6. MARKETPLACE
+// =========================================================================
+
+model ProductCategory {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(150)
+  slug        String   @unique @db.VarChar(170)
+  description String?
+  imageUrl    String?  @map("image_url")
+  parentId    String?  @map("parent_id") @db.Uuid
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  parent   ProductCategory?  @relation("ProductCategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  children ProductCategory[] @relation("ProductCategoryHierarchy")
+  products Product[]
+
+  @@index([parentId])
+  @@map("product_categories")
+}
+
+model Product {
+  id             String        @id @default(uuid()) @db.Uuid
+  businessId     String        @map("business_id") @db.Uuid
+  categoryId     String        @map("category_id") @db.Uuid
+  sku            String        @unique @db.VarChar(100)
+  name           String        @db.VarChar(250)
+  slug           String        @unique @db.VarChar(270)
+  description    String?
+  brand          String?       @db.VarChar(150)
+  partNumber     String?       @map("part_number") @db.VarChar(150)
+  price          Decimal       @db.Decimal(12, 2)
+  compareAtPrice Decimal?      @map("compare_at_price") @db.Decimal(12, 2)
+  costPrice      Decimal?      @map("cost_price") @db.Decimal(12, 2)
+  currency       String        @default("EGP") @db.VarChar(10)
+  weight         Decimal?      @db.Decimal(10, 3)
+  status         ProductStatus @default(ACTIVE)
+  isFeatured     Boolean       @default(false) @map("is_featured")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  deletedAt      DateTime?     @map("deleted_at")
+
+  business               Business                      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  category               ProductCategory               @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  images                 ProductImage[]
+  vehicleCompatibilities ProductVehicleCompatibility[]
+  inventories            Inventory[]
+  cartItems              CartItem[]
+  orderItems             OrderItem[]
+  favoritedBy            FavoriteProduct[]
+  recentlyViewedBy       RecentlyViewedProduct[]
+  reviews                ProductReview[]
+  promotionProducts      PromotionProduct[]
+  inventoryMovements     InventoryMovement[]
+
+  @@index([businessId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([brand])
+  @@index([partNumber])
+  @@map("products")
+}
+
+model ProductImage {
+  id        String   @id @default(uuid()) @db.Uuid
+  productId String   @map("product_id") @db.Uuid
+  imageUrl  String   @map("image_url")
+  altText   String?  @map("alt_text") @db.VarChar(255)
+  sortOrder Int      @default(0) @map("sort_order")
+  isPrimary Boolean  @default(false) @map("is_primary")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("product_images")
+}
+
+model ProductVehicleCompatibility {
+  id        String  @id @default(uuid()) @db.Uuid
+  productId String  @map("product_id") @db.Uuid
+  makeId    String? @map("make_id") @db.Uuid
+  modelId   String? @map("model_id") @db.Uuid
+  yearFrom  Int?    @map("year_from")
+  yearTo    Int?    @map("year_to")
+  engine    String? @db.VarChar(100)
+  notes     String?
+
+  product Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  make    VehicleMake?  @relation(fields: [makeId], references: [id], onDelete: SetNull)
+  model   VehicleModel? @relation(fields: [modelId], references: [id], onDelete: SetNull)
+
+  @@index([productId])
+  @@index([makeId])
+  @@index([modelId])
+  @@map("product_vehicle_compatibility")
+}
+
+model Inventory {
+  id                String   @id @default(uuid()) @db.Uuid
+  businessId        String   @map("business_id") @db.Uuid
+  branchId          String   @map("branch_id") @db.Uuid
+  productId         String   @map("product_id") @db.Uuid
+  quantity          Int      @default(0)
+  reservedQuantity  Int      @default(0) @map("reserved_quantity")
+  availableQuantity Int      @default(0) @map("available_quantity")
+  lowStockThreshold Int      @default(0) @map("low_stock_threshold")
+  reorderQuantity   Int      @default(0) @map("reorder_quantity")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  // Restrict on business/branch/product — inventory (and its movement audit
+  // trail) must survive; hard-deleting a product with stock history is
+  // blocked, matching the "prefer soft delete for products" rule.
+  business  Business            @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  branch    BusinessBranch      @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  product   Product             @relation(fields: [productId], references: [id], onDelete: Restrict)
+  movements InventoryMovement[]
+
+  @@unique([branchId, productId])
+  @@index([businessId])
+  @@index([branchId])
+  @@index([productId])
+  @@map("inventory")
+}
+
+model InventoryMovement {
+  id                String                @id @default(uuid()) @db.Uuid
+  inventoryId       String                @map("inventory_id") @db.Uuid
+  productId         String                @map("product_id") @db.Uuid
+  type              InventoryMovementType
+  quantity          Int
+  previousQuantity  Int                   @map("previous_quantity")
+  newQuantity       Int                   @map("new_quantity")
+  referenceType     String?               @map("reference_type") @db.VarChar(50)
+  referenceId       String?               @map("reference_id") @db.Uuid
+  performedByUserId String?               @map("performed_by_user_id") @db.Uuid
+  notes             String?
+  createdAt         DateTime              @default(now()) @map("created_at")
+
+  // This table is the inventory audit trail: Restrict on inventory/product so
+  // it can never disappear as a side effect of deleting either parent.
+  inventory   Inventory @relation(fields: [inventoryId], references: [id], onDelete: Restrict)
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+  performedBy User?     @relation("InventoryMovementPerformedBy", fields: [performedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([inventoryId])
+  @@index([productId])
+  @@index([type])
+  @@map("inventory_movements")
+}
+
+// =========================================================================
+// 7. COMMERCE
+// =========================================================================
+
+// One-active-cart-per-customer is enforced by a partial unique index
+// (customer_id) WHERE status = 'ACTIVE', added in a follow-up raw-SQL
+// migration because Prisma's schema syntax cannot express partial indexes.
+model Cart {
+  id         String     @id @default(uuid()) @db.Uuid
+  customerId String     @map("customer_id") @db.Uuid
+  status     CartStatus @default(ACTIVE)
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+
+  customer Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  items    CartItem[]
+
+  @@index([customerId])
+  @@map("carts")
+}
+
+model CartItem {
+  id        String   @id @default(uuid()) @db.Uuid
+  cartId    String   @map("cart_id") @db.Uuid
+  productId String   @map("product_id") @db.Uuid
+  quantity  Int
+  unitPrice Decimal  @map("unit_price") @db.Decimal(12, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId])
+  @@map("cart_items")
+}
+
+// shippingAddressSnapshot stores an immutable copy of the address (recipient,
+// phone, lines, city, etc.) captured at checkout time, so later edits to or
+// deletion of the CustomerAddress row never change a placed order's history.
+// shippingAddressId is kept only as a soft pointer back to the live address
+// (onDelete: SetNull) for analytics/support lookups — never the source of
+// truth for what was actually shipped. This is an intentional, documented
+// addition to the spec's field list, not a silently invented entity.
+model Order {
+  id                      String      @id @default(uuid()) @db.Uuid
+  orderNumber             String      @unique @map("order_number") @db.VarChar(50)
+  customerId              String      @map("customer_id") @db.Uuid
+  shippingAddressId       String?     @map("shipping_address_id") @db.Uuid
+  shippingAddressSnapshot Json?       @map("shipping_address_snapshot")
+  status                  OrderStatus @default(PENDING)
+  subtotal                Decimal     @db.Decimal(12, 2)
+  discountAmount          Decimal     @default(0) @map("discount_amount") @db.Decimal(12, 2)
+  shippingAmount          Decimal     @default(0) @map("shipping_amount") @db.Decimal(12, 2)
+  taxAmount               Decimal     @default(0) @map("tax_amount") @db.Decimal(12, 2)
+  totalAmount             Decimal     @map("total_amount") @db.Decimal(12, 2)
+  currency                String      @default("EGP") @db.VarChar(10)
+  customerNotes           String?     @map("customer_notes")
+  createdAt               DateTime    @default(now()) @map("created_at")
+  updatedAt               DateTime    @updatedAt @map("updated_at")
+  cancelledAt             DateTime?   @map("cancelled_at")
+  completedAt             DateTime?   @map("completed_at")
+
+  customer             Customer              @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  shippingAddress      CustomerAddress?      @relation(fields: [shippingAddressId], references: [id], onDelete: SetNull)
+  items                OrderItem[]
+  shipments            Shipment[]
+  payments             Payment[]
+  disputes             Dispute[]
+  productReviews       ProductReview[]
+  promotionUsages      PromotionUsage[]
+  businessTransactions BusinessTransaction[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id                  String   @id @default(uuid()) @db.Uuid
+  orderId             String   @map("order_id") @db.Uuid
+  productId           String   @map("product_id") @db.Uuid
+  businessId          String   @map("business_id") @db.Uuid
+  quantity            Int
+  unitPrice           Decimal  @map("unit_price") @db.Decimal(12, 2)
+  discountAmount      Decimal  @default(0) @map("discount_amount") @db.Decimal(12, 2)
+  totalAmount         Decimal  @map("total_amount") @db.Decimal(12, 2)
+  productNameSnapshot String   @map("product_name_snapshot") @db.VarChar(250)
+  skuSnapshot         String   @map("sku_snapshot") @db.VarChar(100)
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  // productId / businessId onDelete: Restrict — order line items are
+  // permanent financial history and must survive even if a product or
+  // business is later removed; the snapshot fields are what render the
+  // order regardless.
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([businessId])
+  @@map("order_items")
+}
+
+model Shipment {
+  id                  String         @id @default(uuid()) @db.Uuid
+  orderId             String         @map("order_id") @db.Uuid
+  trackingNumber      String?        @map("tracking_number") @db.VarChar(150)
+  carrier             String?        @db.VarChar(150)
+  status              ShipmentStatus @default(PENDING)
+  shippedAt           DateTime?      @map("shipped_at")
+  estimatedDeliveryAt DateTime?      @map("estimated_delivery_at")
+  deliveredAt         DateTime?      @map("delivered_at")
+  createdAt           DateTime       @default(now()) @map("created_at")
+  updatedAt           DateTime       @updatedAt @map("updated_at")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("shipments")
+}
+
+// =========================================================================
+// 8. PAYMENTS
+// =========================================================================
+
+// A CHECK constraint (added in a follow-up raw-SQL migration) enforces that
+// exactly one of order_id / booking_id / service_request_id is non-null,
+// since Prisma's schema syntax cannot express a polymorphic "belongs to
+// exactly one of" rule declaratively.
+model Payment {
+  id                    String        @id @default(uuid()) @db.Uuid
+  customerId            String        @map("customer_id") @db.Uuid
+  orderId               String?       @map("order_id") @db.Uuid
+  bookingId             String?       @map("booking_id") @db.Uuid
+  serviceRequestId      String?       @map("service_request_id") @db.Uuid
+  paymentReference      String        @unique @map("payment_reference") @db.VarChar(100)
+  provider              String?       @db.VarChar(100)
+  providerTransactionId String?       @map("provider_transaction_id") @db.VarChar(150)
+  amount                Decimal       @db.Decimal(12, 2)
+  currency              String        @default("EGP") @db.VarChar(10)
+  method                PaymentMethod
+  status                PaymentStatus @default(PENDING)
+  paidAt                DateTime?     @map("paid_at")
+  failedAt              DateTime?     @map("failed_at")
+  failureReason         String?       @map("failure_reason")
+  createdAt             DateTime      @default(now()) @map("created_at")
+  updatedAt             DateTime      @updatedAt @map("updated_at")
+
+  customer             Customer              @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  order                Order?                @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  booking              Booking?              @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  serviceRequest       ServiceRequest?       @relation(fields: [serviceRequestId], references: [id], onDelete: SetNull)
+  refunds              Refund[]
+  businessTransactions BusinessTransaction[]
+
+  @@index([customerId])
+  @@index([orderId])
+  @@index([bookingId])
+  @@index([serviceRequestId])
+  @@index([status])
+  @@map("payments")
+}
+
+model Refund {
+  id               String       @id @default(uuid()) @db.Uuid
+  paymentId        String       @map("payment_id") @db.Uuid
+  amount           Decimal      @db.Decimal(12, 2)
+  reason           String?
+  status           RefundStatus @default(PENDING)
+  providerRefundId String?      @map("provider_refund_id") @db.VarChar(150)
+  processedAt      DateTime?    @map("processed_at")
+  createdAt        DateTime     @default(now()) @map("created_at")
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+
+  @@index([paymentId])
+  @@map("refunds")
+}
+
+// =========================================================================
+// 9. REVIEWS
+// =========================================================================
+
+// bookingId is unique (not merely indexed) so a completed booking can carry
+// at most one business review, preventing unlimited duplicate reviews.
+model BusinessReview {
+  id         String       @id @default(uuid()) @db.Uuid
+  customerId String       @map("customer_id") @db.Uuid
+  businessId String       @map("business_id") @db.Uuid
+  bookingId  String?      @unique @map("booking_id") @db.Uuid
+  rating     Int
+  title      String?      @db.VarChar(200)
+  comment    String?
+  status     ReviewStatus @default(PENDING)
+  adminReply String?      @map("admin_reply")
+  repliedAt  DateTime?    @map("replied_at")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+
+  customer Customer      @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  business Business      @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  booking  Booking?      @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  images   ReviewImage[]
+
+  @@index([businessId])
+  @@index([customerId])
+  @@map("business_reviews")
+}
+
+// orderId is required — a product review must be tied to a genuine
+// purchase, per spec section 49.
+model ProductReview {
+  id         String       @id @default(uuid()) @db.Uuid
+  customerId String       @map("customer_id") @db.Uuid
+  productId  String       @map("product_id") @db.Uuid
+  orderId    String       @map("order_id") @db.Uuid
+  rating     Int
+  title      String?      @db.VarChar(200)
+  comment    String?
+  status     ReviewStatus @default(PENDING)
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+
+  customer Customer      @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  product  Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
+  order    Order         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  images   ReviewImage[]
+
+  @@index([productId])
+  @@index([customerId])
+  @@map("product_reviews")
+}
+
+// A CHECK constraint (follow-up raw-SQL migration) enforces exactly one of
+// business_review_id / product_review_id is non-null — never both, never
+// neither — since this polymorphic "belongs to exactly one parent" rule
+// cannot be expressed in Prisma's declarative schema syntax.
+model ReviewImage {
+  id               String   @id @default(uuid()) @db.Uuid
+  businessReviewId String?  @map("business_review_id") @db.Uuid
+  productReviewId  String?  @map("product_review_id") @db.Uuid
+  imageUrl         String   @map("image_url")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  businessReview BusinessReview? @relation(fields: [businessReviewId], references: [id], onDelete: Cascade)
+  productReview  ProductReview?  @relation(fields: [productReviewId], references: [id], onDelete: Cascade)
+
+  @@index([businessReviewId])
+  @@index([productReviewId])
+  @@map("review_images")
+}
+
+// =========================================================================
+// 10. PROMOTIONS
+// =========================================================================
+
+model Promotion {
+  id                    String       @id @default(uuid()) @db.Uuid
+  businessId            String?      @map("business_id") @db.Uuid
+  name                  String       @db.VarChar(200)
+  code                  String       @unique @db.VarChar(50)
+  description           String?
+  discountType          DiscountType @map("discount_type")
+  discountValue         Decimal      @map("discount_value") @db.Decimal(12, 2)
+  minimumOrderAmount    Decimal?     @map("minimum_order_amount") @db.Decimal(12, 2)
+  maximumDiscountAmount Decimal?     @map("maximum_discount_amount") @db.Decimal(12, 2)
+  usageLimit            Int?         @map("usage_limit")
+  usageCount            Int          @default(0) @map("usage_count")
+  startsAt              DateTime     @map("starts_at")
+  expiresAt             DateTime     @map("expires_at")
+  isActive              Boolean      @default(true) @map("is_active")
+  createdAt             DateTime     @default(now()) @map("created_at")
+  updatedAt             DateTime     @updatedAt @map("updated_at")
+
+  // businessId nullable = platform-wide promotion when null.
+  business Business?          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  products PromotionProduct[]
+  services PromotionService[]
+  usages   PromotionUsage[]
+
+  @@index([businessId])
+  @@index([isActive])
+  @@map("promotions")
+}
+
+model PromotionProduct {
+  id          String @id @default(uuid()) @db.Uuid
+  promotionId String @map("promotion_id") @db.Uuid
+  productId   String @map("product_id") @db.Uuid
+
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([promotionId, productId])
+  @@map("promotion_products")
+}
+
+model PromotionService {
+  id          String @id @default(uuid()) @db.Uuid
+  promotionId String @map("promotion_id") @db.Uuid
+  serviceId   String @map("service_id") @db.Uuid
+
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  service   Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([promotionId, serviceId])
+  @@map("promotion_services")
+}
+
+// A CHECK constraint (follow-up raw-SQL migration) enforces that at least
+// one of order_id / booking_id is non-null, so a usage always ties back to
+// a real transaction.
+model PromotionUsage {
+  id             String   @id @default(uuid()) @db.Uuid
+  promotionId    String   @map("promotion_id") @db.Uuid
+  customerId     String   @map("customer_id") @db.Uuid
+  orderId        String?  @map("order_id") @db.Uuid
+  bookingId      String?  @map("booking_id") @db.Uuid
+  discountAmount Decimal  @map("discount_amount") @db.Decimal(12, 2)
+  usedAt         DateTime @default(now()) @map("used_at")
+
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  customer  Customer  @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  order     Order?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  booking   Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([promotionId])
+  @@index([customerId])
+  @@map("promotion_usages")
+}
+
+// =========================================================================
+// 11. NOTIFICATIONS
+// =========================================================================
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  type      NotificationType
+  title     String           @db.VarChar(200)
+  message   String
+  data      Json?
+  isRead    Boolean          @default(false) @map("is_read")
+  readAt    DateTime?        @map("read_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model PushDevice {
+  id          String       @id @default(uuid()) @db.Uuid
+  userId      String       @map("user_id") @db.Uuid
+  deviceToken String       @unique @map("device_token") @db.VarChar(255)
+  platform    PushPlatform
+  deviceId    String?      @map("device_id") @db.VarChar(255)
+  isActive    Boolean      @default(true) @map("is_active")
+  lastSeenAt  DateTime?    @map("last_seen_at")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_devices")
+}
+
+// =========================================================================
+// 12. DISPUTES
+// =========================================================================
+
+// A CHECK constraint (follow-up raw-SQL migration) requires at least one of
+// order_id / booking_id / service_request_id to be non-null, so every
+// dispute is anchored to a real transaction.
+model Dispute {
+  id               String        @id @default(uuid()) @db.Uuid
+  customerId       String        @map("customer_id") @db.Uuid
+  businessId       String?       @map("business_id") @db.Uuid
+  orderId          String?       @map("order_id") @db.Uuid
+  bookingId        String?       @map("booking_id") @db.Uuid
+  serviceRequestId String?       @map("service_request_id") @db.Uuid
+  reason           DisputeReason
+  title            String        @db.VarChar(200)
+  description      String
+  status           DisputeStatus @default(OPEN)
+  resolution       String?
+  resolvedByUserId String?       @map("resolved_by_user_id") @db.Uuid
+  resolvedAt       DateTime?     @map("resolved_at")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  customer       Customer            @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  business       Business?           @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  order          Order?              @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  booking        Booking?            @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  serviceRequest ServiceRequest?     @relation(fields: [serviceRequestId], references: [id], onDelete: SetNull)
+  resolvedBy     User?               @relation("DisputeResolvedBy", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
+  messages       DisputeMessage[]
+  attachments    DisputeAttachment[]
+
+  @@index([customerId])
+  @@index([businessId])
+  @@index([status])
+  @@map("disputes")
+}
+
+model DisputeMessage {
+  id           String   @id @default(uuid()) @db.Uuid
+  disputeId    String   @map("dispute_id") @db.Uuid
+  senderUserId String   @map("sender_user_id") @db.Uuid
+  message      String
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  dispute Dispute @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+  sender  User    @relation("DisputeMessageSender", fields: [senderUserId], references: [id], onDelete: Restrict)
+
+  @@index([disputeId])
+  @@map("dispute_messages")
+}
+
+model DisputeAttachment {
+  id               String   @id @default(uuid()) @db.Uuid
+  disputeId        String   @map("dispute_id") @db.Uuid
+  uploadedByUserId String   @map("uploaded_by_user_id") @db.Uuid
+  fileUrl          String   @map("file_url")
+  fileName         String   @map("file_name") @db.VarChar(255)
+  fileType         String?  @map("file_type") @db.VarChar(100)
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  dispute    Dispute @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+  uploadedBy User    @relation("DisputeAttachmentUploadedBy", fields: [uploadedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([disputeId])
+  @@map("dispute_attachments")
+}
+
+// =========================================================================
+// 13. SUPPORT
+// =========================================================================
+
+model SupportTicket {
+  id               String              @id @default(uuid()) @db.Uuid
+  ticketNumber     String              @unique @map("ticket_number") @db.VarChar(50)
+  userId           String              @map("user_id") @db.Uuid
+  subject          String              @db.VarChar(250)
+  category         SupportCategory
+  priority         SupportPriority     @default(MEDIUM)
+  status           SupportTicketStatus @default(OPEN)
+  assignedToUserId String?             @map("assigned_to_user_id") @db.Uuid
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+  resolvedAt       DateTime?           @map("resolved_at")
+
+  user       User                   @relation("SupportTicketCreatedBy", fields: [userId], references: [id], onDelete: Restrict)
+  assignedTo User?                  @relation("SupportTicketAssignedTo", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  messages   SupportTicketMessage[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("support_tickets")
+}
+
+model SupportTicketMessage {
+  id           String   @id @default(uuid()) @db.Uuid
+  ticketId     String   @map("ticket_id") @db.Uuid
+  senderUserId String   @map("sender_user_id") @db.Uuid
+  message      String
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender User          @relation("SupportTicketMessageSender", fields: [senderUserId], references: [id], onDelete: Restrict)
+
+  @@index([ticketId])
+  @@index([createdAt])
+  @@map("support_ticket_messages")
+}
+
+// =========================================================================
+// 14. FINANCIAL MANAGEMENT
+// =========================================================================
+
+model BusinessCommissionRule {
+  id                       String    @id @default(uuid()) @db.Uuid
+  businessId               String?   @map("business_id") @db.Uuid
+  serviceCommissionPercent Decimal   @map("service_commission_percent") @db.Decimal(5, 2)
+  productCommissionPercent Decimal   @map("product_commission_percent") @db.Decimal(5, 2)
+  fixedFee                 Decimal   @default(0) @map("fixed_fee") @db.Decimal(12, 2)
+  effectiveFrom            DateTime  @map("effective_from")
+  effectiveUntil           DateTime? @map("effective_until")
+  isActive                 Boolean   @default(true) @map("is_active")
+  createdAt                DateTime  @default(now()) @map("created_at")
+
+  // businessId nullable = platform default rule when null. Preventing
+  // multiple overlapping active rules for the same business is enforced at
+  // the application/service layer, not the database, per spec section 62.
+  business Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@map("business_commission_rules")
+}
+
+model BusinessTransaction {
+  id          String                     @id @default(uuid()) @db.Uuid
+  businessId  String                     @map("business_id") @db.Uuid
+  orderId     String?                    @map("order_id") @db.Uuid
+  bookingId   String?                    @map("booking_id") @db.Uuid
+  paymentId   String?                    @map("payment_id") @db.Uuid
+  type        BusinessTransactionType
+  grossAmount Decimal                    @map("gross_amount") @db.Decimal(12, 2)
+  platformFee Decimal                    @map("platform_fee") @db.Decimal(12, 2)
+  netAmount   Decimal                    @map("net_amount") @db.Decimal(12, 2)
+  currency    String                     @default("EGP") @db.VarChar(10)
+  status      FinancialTransactionStatus @default(PENDING)
+  createdAt   DateTime                   @default(now()) @map("created_at")
+
+  // businessId onDelete: Restrict — permanent financial record, per spec
+  // section 71's explicit protected-tables list.
+  business Business @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  order    Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  booking  Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  payment  Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([businessId])
+  @@map("business_transactions")
+}
+
+model BusinessPayout {
+  id              String       @id @default(uuid()) @db.Uuid
+  businessId      String       @map("business_id") @db.Uuid
+  amount          Decimal      @db.Decimal(12, 2)
+  currency        String       @default("EGP") @db.VarChar(10)
+  status          PayoutStatus @default(PENDING)
+  payoutReference String?      @unique @map("payout_reference") @db.VarChar(100)
+  processedAt     DateTime?    @map("processed_at")
+  failureReason   String?      @map("failure_reason")
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  // businessId onDelete: Restrict — permanent financial record, per spec
+  // section 71's explicit protected-tables list.
+  business Business @relation(fields: [businessId], references: [id], onDelete: Restrict)
+
+  @@index([businessId])
+  @@index([payoutReference])
+  @@map("business_payouts")
+}
+
+// =========================================================================
+// 15. PLATFORM ADMINISTRATION
+// =========================================================================
+
+// Audit logs are append-only from the application's perspective: userId is
+// nullable/SetNull so a log row survives even if the actor user is deleted.
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  action     String   @db.VarChar(100)
+  entityType String   @map("entity_type") @db.VarChar(100)
+  entityId   String?  @map("entity_id") @db.Uuid
+  oldValues  Json?    @map("old_values")
+  newValues  Json?    @map("new_values")
+  ipAddress  String?  @map("ip_address") @db.Inet
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([createdAt])
+  @@index([action])
+  @@map("audit_logs")
+}
+
+model PlatformSetting {
+  id              String   @id @default(uuid()) @db.Uuid
+  key             String   @unique @db.VarChar(150)
+  value           Json
+  description     String?
+  updatedByUserId String?  @map("updated_by_user_id") @db.Uuid
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  updatedBy User? @relation("PlatformSettingUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+
+  @@map("platform_settings")
+}
