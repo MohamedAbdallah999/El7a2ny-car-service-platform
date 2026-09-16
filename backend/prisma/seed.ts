@@ -1,6 +1,7 @@
 import "dotenv/config";
 
 import { prisma } from "../src/config/prisma.js";
+import { hashPassword } from "../src/utils/password.js";
 
 // Fixed, deterministic UUIDs keep this seed idempotent: re-running it
 // upserts the same rows instead of creating duplicates. This is NOT real
@@ -73,23 +74,34 @@ const ids = {
   platformSettingCommission: "00000000-0000-4000-8000-000000000092",
 };
 
-// Not a real bcrypt hash — placeholder only, since the auth module (which
-// will own real password hashing) does not exist yet in this backend.
-const DEV_PASSWORD_HASH = "dev-seed-placeholder-hash-not-a-real-password";
+const requireSeedPassword = (name: string): string => {
+  const value = process.env[name];
+  if (!value || value.length < 12) {
+    throw new Error(`${name} must be set to a password of at least 12 characters`);
+  }
+  return value;
+};
 
 async function main(): Promise<void> {
+  const [superAdminPasswordHash, adminPasswordHash, customerPasswordHash] =
+    await Promise.all([
+      hashPassword(requireSeedPassword("SEED_SUPER_ADMIN_PASSWORD")),
+      hashPassword(requireSeedPassword("SEED_ADMIN_PASSWORD")),
+      hashPassword(requireSeedPassword("SEED_CUSTOMER_PASSWORD")),
+    ]);
+
   const superAdminUser = await prisma.user.upsert({
     where: { id: ids.superAdminUser },
     create: {
       id: ids.superAdminUser,
       email: "superadmin@el7a2ny.dev",
-      passwordHash: DEV_PASSWORD_HASH,
+      passwordHash: superAdminPasswordHash,
       firstName: "Sara",
       lastName: "Youssef",
       role: "SUPER_ADMIN",
       emailVerified: true,
     },
-    update: {},
+    update: { passwordHash: superAdminPasswordHash },
   });
 
   const adminUser = await prisma.user.upsert({
@@ -97,13 +109,13 @@ async function main(): Promise<void> {
     create: {
       id: ids.adminUser,
       email: "admin@el7a2ny.dev",
-      passwordHash: DEV_PASSWORD_HASH,
+      passwordHash: adminPasswordHash,
       firstName: "Karim",
       lastName: "Adel",
       role: "ADMIN",
       emailVerified: true,
     },
-    update: {},
+    update: { passwordHash: adminPasswordHash },
   });
 
   const admin = await prisma.admin.upsert({
@@ -118,14 +130,14 @@ async function main(): Promise<void> {
       id: ids.customerUser,
       email: "customer@el7a2ny.dev",
       phone: "+201000000000",
-      passwordHash: DEV_PASSWORD_HASH,
+      passwordHash: customerPasswordHash,
       firstName: "Mona",
       lastName: "Hassan",
       role: "CUSTOMER",
       emailVerified: true,
       phoneVerified: true,
     },
-    update: {},
+    update: { passwordHash: customerPasswordHash },
   });
 
   const customer = await prisma.customer.upsert({
