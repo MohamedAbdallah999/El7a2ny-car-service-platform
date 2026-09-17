@@ -13,8 +13,14 @@
   },
   "dependencies": {
     "@car-platform/api-client": "workspace:*",
+    "@car-platform/auth": "workspace:*",
+    "@car-platform/constants": "workspace:*",
+    "@car-platform/permissions": "workspace:*",
     "@car-platform/types": "workspace:*",
     "@car-platform/ui-web": "workspace:*",
+    "@car-platform/utils": "workspace:*",
+    "@car-platform/validation": "workspace:*",
+    "lucide-react": "^1.46.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-router-dom": "^7.18.4"
