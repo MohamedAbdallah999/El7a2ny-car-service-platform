@@ -1,36 +1,182 @@
+import { AuthChallengeType, UserRole } from "../../generated/prisma/client.js";
 import { prisma } from "../../config/database.js";
-import { UserRole } from "../../generated/prisma/client.js";
+
+const registrationExpiry = (): Date => new Date(Date.now() + 10 * 60 * 1000);
+const loginChallengeExpiry = (): Date => new Date(Date.now() + 10 * 60 * 1000);
+const invitationExpiry = (): Date =>
+  new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
 export const authRepository = {
-  findByEmailOrPhone(email: string, phone?: string) {
-    return prisma.user.findFirst({
-      where: {
-        OR: [{ email }, ...(phone ? [{ phone }] : [])],
-      },
-    });
+  findUserByEmailOrPhone(email: string, phone: string) {
+    return prisma.user.findFirst({ where: { OR: [{ email }, { phone }] } });
   },
 
   findByEmail(email: string) {
     return prisma.user.findUnique({ where: { email } });
   },
 
-  createCustomer(input: {
+  findPendingRegistrationByContact(email: string, phone: string) {
+    return prisma.pendingRegistration.findFirst({
+      where: {
+        OR: [{ email }, { phone }],
+        expiresAt: { gt: new Date() },
+      },
+    });
+  },
+
+  async createPendingRegistration(input: {
     email: string;
+    phone: string;
     passwordHash: string;
     firstName: string;
     lastName: string;
-    phone?: string;
+    role: UserRole;
+    adminInvitationId?: string;
   }) {
     return prisma.$transaction(async (transaction) => {
+      await transaction.pendingRegistration.deleteMany({
+        where: { OR: [{ email: input.email }, { phone: input.phone }] },
+      });
+
+      return transaction.pendingRegistration.create({
+        data: { ...input, expiresAt: registrationExpiry() },
+      });
+    });
+  },
+
+  findPendingRegistration(registrationId: string) {
+    return prisma.pendingRegistration.findFirst({
+      where: { id: registrationId, expiresAt: { gt: new Date() } },
+    });
+  },
+
+  deletePendingRegistration(registrationId: string) {
+    return prisma.pendingRegistration.deleteMany({
+      where: { id: registrationId },
+    });
+  },
+
+  async completePendingRegistration(registrationId: string) {
+    return prisma.$transaction(async (transaction) => {
+      const pending = await transaction.pendingRegistration.findFirst({
+        where: { id: registrationId, expiresAt: { gt: new Date() } },
+      });
+
+      if (!pending) {
+        return null;
+      }
+
       const user = await transaction.user.create({
         data: {
-          ...input,
-          role: UserRole.CUSTOMER,
+          email: pending.email,
+          phone: pending.phone,
+          passwordHash: pending.passwordHash,
+          firstName: pending.firstName,
+          lastName: pending.lastName,
+          role: pending.role,
+          phoneVerified: true,
         },
       });
 
-      await transaction.customer.create({ data: { userId: user.id } });
+      if (pending.role === UserRole.CUSTOMER) {
+        await transaction.customer.create({ data: { userId: user.id } });
+      }
+
+      if (pending.role === UserRole.ADMIN) {
+        if (!pending.adminInvitationId) {
+          throw new Error("Admin registration is missing an invitation");
+        }
+
+        await transaction.admin.create({ data: { userId: user.id } });
+        const invitation = await transaction.adminInvitation.updateMany({
+          where: { id: pending.adminInvitationId, usedAt: null },
+          data: { usedAt: new Date() },
+        });
+
+        if (invitation.count !== 1) {
+          throw new Error("Admin invitation is no longer available");
+        }
+      }
+
+      await transaction.pendingRegistration.delete({
+        where: { id: pending.id },
+      });
       return user;
+    });
+  },
+
+  async createAdminInvitation(input: {
+    email: string;
+    phone: string;
+    tokenHash: string;
+    createdByUserId: string;
+  }) {
+    return prisma.$transaction(async (transaction) => {
+      await transaction.adminInvitation.deleteMany({
+        where: { OR: [{ email: input.email }, { phone: input.phone }] },
+      });
+
+      return transaction.adminInvitation.create({
+        data: { ...input, expiresAt: invitationExpiry() },
+      });
+    });
+  },
+
+  findAdminInvitation(email: string, phone: string, tokenHash: string) {
+    return prisma.adminInvitation.findFirst({
+      where: {
+        email,
+        phone,
+        tokenHash,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+    });
+  },
+
+  findActiveAdminInvitationByContact(email: string, phone: string) {
+    return prisma.adminInvitation.findFirst({
+      where: {
+        OR: [{ email }, { phone }],
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+    });
+  },
+
+  async createLoginChallenge(userId: string, tokenHash: string) {
+    return prisma.$transaction(async (transaction) => {
+      await transaction.loginChallenge.deleteMany({
+        where: { userId, type: AuthChallengeType.PRIVILEGED_LOGIN },
+      });
+
+      return transaction.loginChallenge.create({
+        data: {
+          userId,
+          tokenHash,
+          type: AuthChallengeType.PRIVILEGED_LOGIN,
+          expiresAt: loginChallengeExpiry(),
+        },
+      });
+    });
+  },
+
+  findActiveLoginChallenge(tokenHash: string) {
+    return prisma.loginChallenge.findFirst({
+      where: {
+        tokenHash,
+        type: AuthChallengeType.PRIVILEGED_LOGIN,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      include: { user: true },
+    });
+  },
+
+  consumeLoginChallenge(challengeId: string) {
+    return prisma.loginChallenge.updateMany({
+      where: { id: challengeId, usedAt: null, expiresAt: { gt: new Date() } },
+      data: { usedAt: new Date() },
     });
   },
 

@@ -82,7 +82,17 @@ const requireSeedPassword = (name: string): string => {
   return value;
 };
 
+const requireSeedPhone = (name: string): string => {
+  const value = process.env[name];
+  if (!value || !/^\+[1-9]\d{7,14}$/.test(value)) {
+    throw new Error(`${name} must be set to an E.164 phone number`);
+  }
+  return value;
+};
+
 async function main(): Promise<void> {
+  const superAdminPhone = requireSeedPhone("SEED_SUPER_ADMIN_PHONE");
+  const adminPhone = requireSeedPhone("SEED_ADMIN_PHONE");
   const [superAdminPasswordHash, adminPasswordHash, customerPasswordHash] =
     await Promise.all([
       hashPassword(requireSeedPassword("SEED_SUPER_ADMIN_PASSWORD")),
@@ -95,13 +105,19 @@ async function main(): Promise<void> {
     create: {
       id: ids.superAdminUser,
       email: "superadmin@el7a2ny.dev",
+      phone: superAdminPhone,
       passwordHash: superAdminPasswordHash,
       firstName: "Sara",
       lastName: "Youssef",
       role: "SUPER_ADMIN",
+      phoneVerified: true,
       emailVerified: true,
     },
-    update: { passwordHash: superAdminPasswordHash },
+    update: {
+      passwordHash: superAdminPasswordHash,
+      phone: superAdminPhone,
+      phoneVerified: true,
+    },
   });
 
   const adminUser = await prisma.user.upsert({
@@ -109,13 +125,19 @@ async function main(): Promise<void> {
     create: {
       id: ids.adminUser,
       email: "admin@el7a2ny.dev",
+      phone: adminPhone,
       passwordHash: adminPasswordHash,
       firstName: "Karim",
       lastName: "Adel",
       role: "ADMIN",
+      phoneVerified: true,
       emailVerified: true,
     },
-    update: { passwordHash: adminPasswordHash },
+    update: {
+      passwordHash: adminPasswordHash,
+      phone: adminPhone,
+      phoneVerified: true,
+    },
   });
 
   const admin = await prisma.admin.upsert({

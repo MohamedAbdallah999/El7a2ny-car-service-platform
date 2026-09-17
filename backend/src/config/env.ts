@@ -33,6 +33,15 @@ export const env = {
   get port(): number {
     return Number(process.env.PORT ?? 4000);
   },
+  get twilioAccountSid(): string | undefined {
+    return process.env.TWILIO_ACCOUNT_SID;
+  },
+  get twilioAuthToken(): string | undefined {
+    return process.env.TWILIO_AUTH_TOKEN;
+  },
+  get twilioVerifyServiceSid(): string | undefined {
+    return process.env.TWILIO_VERIFY_SERVICE_SID;
+  },
 };
 
 export const validateEnvironment = (): void => {
@@ -42,5 +51,14 @@ export const validateEnvironment = (): void => {
     throw new Error(
       "CORS_ORIGINS must list the permitted web application origins",
     );
+  }
+
+  if (
+    process.env.NODE_ENV === "production" &&
+    (!env.twilioAccountSid ||
+      !env.twilioAuthToken ||
+      !env.twilioVerifyServiceSid)
+  ) {
+    throw new Error("Twilio Verify must be configured in production");
   }
 };

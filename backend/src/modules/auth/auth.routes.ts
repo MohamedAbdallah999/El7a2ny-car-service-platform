@@ -1,12 +1,30 @@
 import { Router } from "express";
-import { register, login, getMe } from "./auth.controller.js";
-import { authenticate } from "../../middleware/auth.middleware.js";
+import {
+  createAdminInvitation,
+  getMe,
+  login,
+  register,
+  registerAdmin,
+  verifyAdminRegistration,
+  verifyLogin,
+  verifyRegistration,
+} from "./auth.controller.js";
+import { authenticate, authorize } from "../../middleware/auth.middleware.js";
 import { validateBody } from "../../middleware/validation.middleware.js";
 import {
   loginLimiter,
   registrationLimiter,
+  verificationLimiter,
 } from "../../middleware/rate-limit.middleware.js";
-import { loginSchema, registerSchema } from "./auth.validation.js";
+import { UserRole } from "../../generated/prisma/client.js";
+import {
+  adminInvitationSchema,
+  adminRegistrationSchema,
+  loginSchema,
+  loginVerificationSchema,
+  registerSchema,
+  registrationVerificationSchema,
+} from "./auth.validation.js";
 
 const router = Router();
 
@@ -22,10 +40,41 @@ router.post(
   register,
 );
 router.post(
+  "/register/verify",
+  verificationLimiter,
+  validateBody(registrationVerificationSchema, "Invalid verification data"),
+  verifyRegistration,
+);
+router.post(
+  "/admin/register",
+  registrationLimiter,
+  validateBody(adminRegistrationSchema, "Invalid registration data", true),
+  registerAdmin,
+);
+router.post(
+  "/admin/register/verify",
+  verificationLimiter,
+  validateBody(registrationVerificationSchema, "Invalid verification data"),
+  verifyAdminRegistration,
+);
+router.post(
   "/login",
   loginLimiter,
   validateBody(loginSchema, "Invalid email or password"),
   login,
+);
+router.post(
+  "/login/verify",
+  verificationLimiter,
+  validateBody(loginVerificationSchema, "Invalid verification data"),
+  verifyLogin,
+);
+router.post(
+  "/admin/invitations",
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN),
+  validateBody(adminInvitationSchema, "Invalid invitation data", true),
+  createAdminInvitation,
 );
 router.get("/me", authenticate, getMe);
 
