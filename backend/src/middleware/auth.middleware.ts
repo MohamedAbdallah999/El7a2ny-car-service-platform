@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
-import { verifyToken } from "../utils/jwt.js";
+import { verifyToken } from "../modules/auth/auth.token.js";
 import { UserRole, UserStatus } from "../generated/prisma/client.js";
-import { prisma } from "../config/prisma.js";
+import { authRepository } from "../modules/auth/auth.repository.js";
 
 export const authenticate = async (
   req: Request,
@@ -30,12 +30,15 @@ export const authenticate = async (
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: payload.userId },
-      select: { id: true, role: true, status: true },
-    });
+    const user = await authRepository.findAuthenticationUserById(
+      payload.userId,
+    );
 
-    if (!user || user.status !== UserStatus.ACTIVE || user.role !== payload.role) {
+    if (
+      !user ||
+      user.status !== UserStatus.ACTIVE ||
+      user.role !== payload.role
+    ) {
       res.status(401).json({ error: "Unauthorized" });
       return;
     }

@@ -1,21 +1,15 @@
-import jwt, { type JwtPayload as JsonWebTokenPayload, type SignOptions } from "jsonwebtoken";
-import { UserRole } from "../generated/prisma/client.js";
+import jwt, {
+  type JwtPayload as JsonWebTokenPayload,
+  type SignOptions,
+} from "jsonwebtoken";
+import { env } from "../../config/env.js";
+import { UserRole } from "../../generated/prisma/client.js";
 
 const JWT_ISSUER = "el7a2ny-api";
 const JWT_AUDIENCE = "el7a2ny-clients";
 
-const getJwtSecret = (): string => {
-  const secret = process.env.JWT_SECRET;
-
-  if (!secret || secret.length < 32) {
-    throw new Error("JWT_SECRET must be configured with at least 32 characters");
-  }
-
-  return secret;
-};
-
 const getJwtExpiresIn = (): SignOptions["expiresIn"] =>
-  (process.env.JWT_EXPIRES_IN ?? "15m") as SignOptions["expiresIn"];
+  env.jwtExpiresIn as SignOptions["expiresIn"];
 
 export interface JwtPayload {
   userId: string;
@@ -23,7 +17,7 @@ export interface JwtPayload {
 }
 
 export const signToken = (payload: JwtPayload): string => {
-  return jwt.sign(payload, getJwtSecret(), {
+  return jwt.sign(payload, env.jwtSecret, {
     algorithm: "HS256",
     audience: JWT_AUDIENCE,
     expiresIn: getJwtExpiresIn(),
@@ -33,7 +27,7 @@ export const signToken = (payload: JwtPayload): string => {
 };
 
 export const verifyToken = (token: string): JwtPayload => {
-  const decoded = jwt.verify(token, getJwtSecret(), {
+  const decoded = jwt.verify(token, env.jwtSecret, {
     algorithms: ["HS256"],
     audience: JWT_AUDIENCE,
     issuer: JWT_ISSUER,

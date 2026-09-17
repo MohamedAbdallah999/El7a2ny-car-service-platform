@@ -1,10 +1,10 @@
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
-import authRoutes from "./auth/auth.routes.js";
 import { corsOrigins } from "./config/env.js";
 import { AppError } from "./errors/app-error.js";
 import { errorHandler } from "./middleware/error.middleware.js";
+import routes from "./routes/index.js";
 
 export const app = express();
 
@@ -25,7 +25,7 @@ app.use(
 );
 app.use(express.json({ limit: "100kb", strict: true }));
 
-app.use("/api/auth", authRoutes);
+app.use("/api", routes);
 
 app.get("/health", (_request, response) => {
   response.json({ status: "ok" });

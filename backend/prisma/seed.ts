@@ -1,7 +1,7 @@
 import "dotenv/config";
 
-import { prisma } from "../src/config/prisma.js";
-import { hashPassword } from "../src/utils/password.js";
+import { prisma } from "../src/config/database.js";
+import { hashPassword } from "../src/modules/auth/auth.password.js";
 
 // Fixed, deterministic UUIDs keep this seed idempotent: re-running it
 // upserts the same rows instead of creating duplicates. This is NOT real

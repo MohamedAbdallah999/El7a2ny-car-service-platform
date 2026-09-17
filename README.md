@@ -1,6 +1,6 @@
 # El7a2ny Car Service Platform
 
-Production-oriented monorepo foundation for a car service platform serving Customer, Admin, and Super Admin roles. This repository currently contains framework setup and infrastructure only; no business features, data models, authentication flows, or domain APIs have been implemented.
+Production-oriented monorepo for a car service platform serving Customer, Admin, and Super Admin roles. It includes web and mobile applications, an Express API, authentication, and a PostgreSQL domain model managed through Prisma.
 
 ## Architecture
 
@@ -24,7 +24,16 @@ The repository uses pnpm workspaces and Turborepo. It contains six independent R
 
 ## Backend
 
-The backend is a single Express application in `backend/`. It currently exposes only `GET /health`, which returns `{ "status": "ok" }`. Prisma is configured for PostgreSQL and intentionally contains no business models.
+The backend is a modular Express application in `backend/`. It exposes `GET /health` and authentication endpoints under `/api/auth`. Features live in `src/modules`; each module keeps its routes, controllers, business services, repositories, validation, and feature-specific helpers together.
+
+Backend responsibilities are organized as follows:
+
+- `src/config` centralizes environment access and database initialization.
+- `src/modules` contains feature modules. Requests flow from routes to controllers, services, repositories, and Prisma.
+- `src/middleware` contains shared HTTP concerns such as authentication, validation, rate limiting, and error handling.
+- `src/errors` contains application-level error types.
+- `src/routes` composes module routers while each module owns its endpoint definitions.
+- `prisma` contains the schema, migrations, and development seed.
 
 ## Shared packages
 
@@ -115,7 +124,19 @@ pnpm --filter @car-platform/backend prisma:seed
 |   `-- super-admin-web/
 |-- backend/
 |   |-- prisma/
+|   |   |-- migrations/
+|   |   |-- schema.prisma
+|   |   `-- seed.ts
 |   |-- src/
+|   |   |-- config/
+|   |   |-- errors/
+|   |   |-- middleware/
+|   |   |-- modules/
+|   |   |   `-- auth/
+|   |   |-- routes/
+|   |   |-- types/
+|   |   |-- app.ts
+|   |   `-- server.ts
 |   `-- tests/
 |-- packages/
 |   |-- api-client/

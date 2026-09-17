@@ -7,9 +7,12 @@ import {
   loginSchema,
   passwordSchema,
   registerSchema,
-} from "../src/auth/auth.schemas.js";
-import { signToken, verifyToken } from "../src/utils/jwt.js";
-import { comparePassword, hashPassword } from "../src/utils/password.js";
+} from "../src/modules/auth/auth.validation.js";
+import { signToken, verifyToken } from "../src/modules/auth/auth.token.js";
+import {
+  comparePassword,
+  hashPassword,
+} from "../src/modules/auth/auth.password.js";
 
 process.env.JWT_SECRET = "test-secret-that-is-at-least-32-characters-long";
 
