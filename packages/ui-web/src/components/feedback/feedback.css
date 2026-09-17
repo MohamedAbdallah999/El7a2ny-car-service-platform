@@ -1,0 +1,163 @@
+.ui-badge {
+  display: inline-flex;
+  min-height: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  padding-inline: var(--spacing-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  white-space: nowrap;
+}
+.ui-badge--default {
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+}
+.ui-badge--success {
+  border-color: var(--color-success-border);
+  background: var(--color-success-background);
+  color: var(--color-success-text);
+}
+.ui-badge--warning {
+  border-color: var(--color-warning-border);
+  background: var(--color-warning-background);
+  color: var(--color-warning-text);
+}
+.ui-badge--error {
+  border-color: var(--color-error-border);
+  background: var(--color-error-background);
+  color: var(--color-error-text);
+}
+.ui-badge--info {
+  border-color: var(--color-info-border);
+  background: var(--color-info-background);
+  color: var(--color-info-text);
+}
+.ui-badge--muted {
+  border-color: var(--color-border);
+  background: var(--color-surface-subtle);
+  color: var(--color-text-muted);
+}
+.ui-badge--dark {
+  border-color: var(--color-dark-subtle);
+  background: var(--color-dark-surface);
+  color: var(--color-surface);
+}
+
+.ui-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3) var(--spacing-4);
+  border: 1px solid;
+  border-radius: var(--radius-md);
+}
+.ui-alert--success {
+  border-color: var(--color-success-border);
+  background: var(--color-success-background);
+  color: var(--color-success-text);
+}
+.ui-alert--warning {
+  border-color: var(--color-warning-border);
+  background: var(--color-warning-background);
+  color: var(--color-warning-text);
+}
+.ui-alert--error {
+  border-color: var(--color-error-border);
+  background: var(--color-error-background);
+  color: var(--color-error-text);
+}
+.ui-alert--info {
+  border-color: var(--color-info-border);
+  background: var(--color-info-background);
+  color: var(--color-info-text);
+}
+.ui-alert__icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+.ui-alert__title {
+  display: block;
+  margin-bottom: var(--spacing-1);
+}
+.ui-alert__content {
+  font-size: var(--font-size-sm);
+}
+
+.ui-empty-state,
+.ui-success-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-10) var(--spacing-6);
+  text-align: center;
+}
+.ui-empty-state__icon,
+.ui-success-state__icon {
+  display: inline-flex;
+  width: 3.5rem;
+  height: 3.5rem;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--spacing-4);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xl);
+}
+.ui-success-state__icon {
+  border: 1px solid var(--color-success-border);
+  background: var(--color-success-background);
+  color: var(--color-success-text);
+}
+.ui-empty-state__title,
+.ui-success-state__title {
+  font-size: var(--font-size-xl);
+}
+.ui-empty-state__description,
+.ui-success-state__description {
+  max-width: 32rem;
+  margin-top: var(--spacing-2);
+  color: var(--color-text-tertiary);
+}
+.ui-empty-state__action,
+.ui-success-state__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--spacing-2);
+  margin-top: var(--spacing-5);
+}
+.ui-success-state__details {
+  width: 100%;
+  max-width: 32rem;
+  margin-top: var(--spacing-5);
+}
+
+.ui-chip {
+  display: inline-flex;
+  min-height: 1.75rem;
+  align-items: center;
+  padding-inline: var(--spacing-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-subtle);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+}
+.ui-chip:hover:not(:disabled) {
+  border-color: var(--color-border-strong);
+}
+.ui-chip--selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+.ui-chip--compatible {
+  border-color: var(--color-success-border);
+  background: var(--color-success-background);
+  color: var(--color-success-text);
+}
