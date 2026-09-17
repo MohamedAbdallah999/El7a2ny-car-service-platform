@@ -4,6 +4,7 @@ import type { NextFunction, Request, Response } from "express";
 import { UserRole } from "../src/generated/prisma/client.js";
 import { authorize } from "../src/middleware/auth.middleware.js";
 import {
+  adminRegistrationSchema,
   loginSchema,
   passwordSchema,
   registerSchema,
@@ -41,10 +42,12 @@ test("authentication schemas normalize email and reject unknown or oversized inp
     password: "Correct-Horse-42!",
     firstName: " Test ",
     lastName: " User ",
+    phone: "+201000000000",
   });
 
   assert.equal(registration.email, "user@example.com");
   assert.equal(registration.firstName, "Test");
+  assert.equal(registration.phone, "+201000000000");
   assert.equal(
     registerSchema.safeParse({ ...registration, unexpected: true }).success,
     false,
@@ -57,6 +60,22 @@ test("authentication schemas normalize email and reject unknown or oversized inp
     loginSchema.safeParse({
       email: "user@example.com",
       password: "x".repeat(73),
+    }).success,
+    false,
+  );
+  assert.equal(
+    registerSchema.safeParse({
+      email: "user@example.com",
+      password: "Correct-Horse-42!",
+      firstName: "Test",
+      lastName: "User",
+    }).success,
+    false,
+  );
+  assert.equal(
+    adminRegistrationSchema.safeParse({
+      ...registration,
+      invitationToken: "too-short",
     }).success,
     false,
   );

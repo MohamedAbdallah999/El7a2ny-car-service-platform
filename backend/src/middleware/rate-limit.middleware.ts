@@ -16,3 +16,11 @@ export const registrationLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: "Too many registrations. Please try again later." },
 });
+
+export const verificationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Too many verification attempts. Please try again later." },
+});
