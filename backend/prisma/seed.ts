@@ -77,7 +77,9 @@ const ids = {
 const requireSeedPassword = (name: string): string => {
   const value = process.env[name];
   if (!value || value.length < 12) {
-    throw new Error(`${name} must be set to a password of at least 12 characters`);
+    throw new Error(
+      `${name} must be set to a password of at least 12 characters`,
+    );
   }
   return value;
 };
@@ -176,11 +178,31 @@ async function main(): Promise<void> {
 
   // --- Vehicle makes & models -------------------------------------------
   const [toyota, bmw, hyundai, mercedes, kia] = await Promise.all([
-    prisma.vehicleMake.upsert({ where: { id: ids.makeToyota }, create: { id: ids.makeToyota, name: "Toyota" }, update: {} }),
-    prisma.vehicleMake.upsert({ where: { id: ids.makeBmw }, create: { id: ids.makeBmw, name: "BMW" }, update: {} }),
-    prisma.vehicleMake.upsert({ where: { id: ids.makeHyundai }, create: { id: ids.makeHyundai, name: "Hyundai" }, update: {} }),
-    prisma.vehicleMake.upsert({ where: { id: ids.makeMercedes }, create: { id: ids.makeMercedes, name: "Mercedes-Benz" }, update: {} }),
-    prisma.vehicleMake.upsert({ where: { id: ids.makeKia }, create: { id: ids.makeKia, name: "Kia" }, update: {} }),
+    prisma.vehicleMake.upsert({
+      where: { id: ids.makeToyota },
+      create: { id: ids.makeToyota, name: "Toyota" },
+      update: {},
+    }),
+    prisma.vehicleMake.upsert({
+      where: { id: ids.makeBmw },
+      create: { id: ids.makeBmw, name: "BMW" },
+      update: {},
+    }),
+    prisma.vehicleMake.upsert({
+      where: { id: ids.makeHyundai },
+      create: { id: ids.makeHyundai, name: "Hyundai" },
+      update: {},
+    }),
+    prisma.vehicleMake.upsert({
+      where: { id: ids.makeMercedes },
+      create: { id: ids.makeMercedes, name: "Mercedes-Benz" },
+      update: {},
+    }),
+    prisma.vehicleMake.upsert({
+      where: { id: ids.makeKia },
+      create: { id: ids.makeKia, name: "Kia" },
+      update: {},
+    }),
   ]);
 
   const corolla = await prisma.vehicleModel.upsert({
@@ -227,28 +249,48 @@ async function main(): Promise<void> {
   // --- Categories ---------------------------------------------------------
   const serviceCategoryMaintenance = await prisma.serviceCategory.upsert({
     where: { id: ids.serviceCategoryMaintenance },
-    create: { id: ids.serviceCategoryMaintenance, name: "Maintenance", slug: "maintenance" },
+    create: {
+      id: ids.serviceCategoryMaintenance,
+      name: "Maintenance",
+      slug: "maintenance",
+    },
     update: {},
   });
   const serviceCategoryTires = await prisma.serviceCategory.upsert({
     where: { id: ids.serviceCategoryTires },
-    create: { id: ids.serviceCategoryTires, name: "Tires & Wheels", slug: "tires-wheels" },
+    create: {
+      id: ids.serviceCategoryTires,
+      name: "Tires & Wheels",
+      slug: "tires-wheels",
+    },
     update: {},
   });
   const serviceCategoryDetailing = await prisma.serviceCategory.upsert({
     where: { id: ids.serviceCategoryDetailing },
-    create: { id: ids.serviceCategoryDetailing, name: "Detailing", slug: "detailing" },
+    create: {
+      id: ids.serviceCategoryDetailing,
+      name: "Detailing",
+      slug: "detailing",
+    },
     update: {},
   });
 
   const productCategoryFluids = await prisma.productCategory.upsert({
     where: { id: ids.productCategoryFluids },
-    create: { id: ids.productCategoryFluids, name: "Fluids & Oils", slug: "fluids-oils" },
+    create: {
+      id: ids.productCategoryFluids,
+      name: "Fluids & Oils",
+      slug: "fluids-oils",
+    },
     update: {},
   });
   const productCategoryFilters = await prisma.productCategory.upsert({
     where: { id: ids.productCategoryFilters },
-    create: { id: ids.productCategoryFilters, name: "Filters", slug: "filters" },
+    create: {
+      id: ids.productCategoryFilters,
+      name: "Filters",
+      slug: "filters",
+    },
     update: {},
   });
   const productCategoryBrakes = await prisma.productCategory.upsert({
@@ -258,7 +300,11 @@ async function main(): Promise<void> {
   });
   const productCategoryElectrical = await prisma.productCategory.upsert({
     where: { id: ids.productCategoryElectrical },
-    create: { id: ids.productCategoryElectrical, name: "Electrical", slug: "electrical" },
+    create: {
+      id: ids.productCategoryElectrical,
+      name: "Electrical",
+      slug: "electrical",
+    },
     update: {},
   });
   const productCategoryTires = await prisma.productCategory.upsert({
@@ -275,7 +321,8 @@ async function main(): Promise<void> {
       adminId: admin.id,
       name: "El7a2ny Garage Nasr City",
       slug: "el7a2ny-garage-nasr-city",
-      description: "Full-service garage specializing in maintenance, tires, and detailing.",
+      description:
+        "Full-service garage specializing in maintenance, tires, and detailing.",
       businessType: "MULTI_SERVICE",
       email: "contact@el7a2ny-garage.dev",
       phone: "+20222222222",
@@ -340,15 +387,69 @@ async function main(): Promise<void> {
     durationMinutes: number;
     basePrice: number;
   }> = [
-    { id: ids.serviceOilChange, name: "Oil Change", categoryId: serviceCategoryMaintenance.id, durationMinutes: 30, basePrice: 450 },
-    { id: ids.serviceBrakeInspection, name: "Brake Inspection", categoryId: serviceCategoryMaintenance.id, durationMinutes: 30, basePrice: 200 },
-    { id: ids.serviceBrakePadReplacement, name: "Brake Pad Replacement", categoryId: serviceCategoryMaintenance.id, durationMinutes: 60, basePrice: 900 },
-    { id: ids.serviceEngineDiagnostics, name: "Engine Diagnostics", categoryId: serviceCategoryMaintenance.id, durationMinutes: 45, basePrice: 350 },
-    { id: ids.serviceAcService, name: "AC Service", categoryId: serviceCategoryMaintenance.id, durationMinutes: 60, basePrice: 500 },
-    { id: ids.serviceBatteryReplacement, name: "Battery Replacement", categoryId: serviceCategoryMaintenance.id, durationMinutes: 20, basePrice: 2200 },
-    { id: ids.serviceTireReplacement, name: "Tire Replacement", categoryId: serviceCategoryTires.id, durationMinutes: 40, basePrice: 1800 },
-    { id: ids.serviceWheelAlignment, name: "Wheel Alignment", categoryId: serviceCategoryTires.id, durationMinutes: 45, basePrice: 400 },
-    { id: ids.serviceCarDetailing, name: "Car Detailing", categoryId: serviceCategoryDetailing.id, durationMinutes: 120, basePrice: 1200 },
+    {
+      id: ids.serviceOilChange,
+      name: "Oil Change",
+      categoryId: serviceCategoryMaintenance.id,
+      durationMinutes: 30,
+      basePrice: 450,
+    },
+    {
+      id: ids.serviceBrakeInspection,
+      name: "Brake Inspection",
+      categoryId: serviceCategoryMaintenance.id,
+      durationMinutes: 30,
+      basePrice: 200,
+    },
+    {
+      id: ids.serviceBrakePadReplacement,
+      name: "Brake Pad Replacement",
+      categoryId: serviceCategoryMaintenance.id,
+      durationMinutes: 60,
+      basePrice: 900,
+    },
+    {
+      id: ids.serviceEngineDiagnostics,
+      name: "Engine Diagnostics",
+      categoryId: serviceCategoryMaintenance.id,
+      durationMinutes: 45,
+      basePrice: 350,
+    },
+    {
+      id: ids.serviceAcService,
+      name: "AC Service",
+      categoryId: serviceCategoryMaintenance.id,
+      durationMinutes: 60,
+      basePrice: 500,
+    },
+    {
+      id: ids.serviceBatteryReplacement,
+      name: "Battery Replacement",
+      categoryId: serviceCategoryMaintenance.id,
+      durationMinutes: 20,
+      basePrice: 2200,
+    },
+    {
+      id: ids.serviceTireReplacement,
+      name: "Tire Replacement",
+      categoryId: serviceCategoryTires.id,
+      durationMinutes: 40,
+      basePrice: 1800,
+    },
+    {
+      id: ids.serviceWheelAlignment,
+      name: "Wheel Alignment",
+      categoryId: serviceCategoryTires.id,
+      durationMinutes: 45,
+      basePrice: 400,
+    },
+    {
+      id: ids.serviceCarDetailing,
+      name: "Car Detailing",
+      categoryId: serviceCategoryDetailing.id,
+      durationMinutes: 120,
+      basePrice: 1200,
+    },
   ];
 
   for (const s of serviceSeed) {
@@ -379,16 +480,96 @@ async function main(): Promise<void> {
     price: number;
     quantity: number;
   }> = [
-    { id: ids.productEngineOil, name: "Engine Oil 5W-30 (4L)", sku: "EL7-OIL-5W30-4L", slug: "engine-oil-5w30-4l", categoryId: productCategoryFluids.id, price: 850, quantity: 40 },
-    { id: ids.productOilFilter, name: "Oil Filter", sku: "EL7-FLT-OIL-001", slug: "oil-filter-001", categoryId: productCategoryFilters.id, price: 120, quantity: 60 },
-    { id: ids.productAirFilter, name: "Air Filter", sku: "EL7-FLT-AIR-001", slug: "air-filter-001", categoryId: productCategoryFilters.id, price: 150, quantity: 50 },
-    { id: ids.productBrakePads, name: "Brake Pads (Front Set)", sku: "EL7-BRK-PAD-F01", slug: "brake-pads-front-set", categoryId: productCategoryBrakes.id, price: 700, quantity: 30 },
-    { id: ids.productSparkPlugs, name: "Spark Plugs (Set of 4)", sku: "EL7-ELE-SPK-004", slug: "spark-plugs-set-of-4", categoryId: productCategoryElectrical.id, price: 400, quantity: 45 },
-    { id: ids.productCarBattery, name: "Car Battery 70Ah", sku: "EL7-ELE-BAT-070", slug: "car-battery-70ah", categoryId: productCategoryElectrical.id, price: 2100, quantity: 15 },
-    { id: ids.productEngineAirFilter, name: "Engine Air Filter (Performance)", sku: "EL7-FLT-EAF-001", slug: "engine-air-filter-performance", categoryId: productCategoryFilters.id, price: 220, quantity: 25 },
-    { id: ids.productCabinFilter, name: "Cabin Filter", sku: "EL7-FLT-CAB-001", slug: "cabin-filter-001", categoryId: productCategoryFilters.id, price: 180, quantity: 35 },
-    { id: ids.productTire, name: "Tire 195/65R15", sku: "EL7-TIRE-195-65-15", slug: "tire-195-65r15", categoryId: productCategoryTires.id, price: 2600, quantity: 20 },
-    { id: ids.productBrakeDisc, name: "Brake Disc (Front, Pair)", sku: "EL7-BRK-DSC-F01", slug: "brake-disc-front-pair", categoryId: productCategoryBrakes.id, price: 1500, quantity: 18 },
+    {
+      id: ids.productEngineOil,
+      name: "Engine Oil 5W-30 (4L)",
+      sku: "EL7-OIL-5W30-4L",
+      slug: "engine-oil-5w30-4l",
+      categoryId: productCategoryFluids.id,
+      price: 850,
+      quantity: 40,
+    },
+    {
+      id: ids.productOilFilter,
+      name: "Oil Filter",
+      sku: "EL7-FLT-OIL-001",
+      slug: "oil-filter-001",
+      categoryId: productCategoryFilters.id,
+      price: 120,
+      quantity: 60,
+    },
+    {
+      id: ids.productAirFilter,
+      name: "Air Filter",
+      sku: "EL7-FLT-AIR-001",
+      slug: "air-filter-001",
+      categoryId: productCategoryFilters.id,
+      price: 150,
+      quantity: 50,
+    },
+    {
+      id: ids.productBrakePads,
+      name: "Brake Pads (Front Set)",
+      sku: "EL7-BRK-PAD-F01",
+      slug: "brake-pads-front-set",
+      categoryId: productCategoryBrakes.id,
+      price: 700,
+      quantity: 30,
+    },
+    {
+      id: ids.productSparkPlugs,
+      name: "Spark Plugs (Set of 4)",
+      sku: "EL7-ELE-SPK-004",
+      slug: "spark-plugs-set-of-4",
+      categoryId: productCategoryElectrical.id,
+      price: 400,
+      quantity: 45,
+    },
+    {
+      id: ids.productCarBattery,
+      name: "Car Battery 70Ah",
+      sku: "EL7-ELE-BAT-070",
+      slug: "car-battery-70ah",
+      categoryId: productCategoryElectrical.id,
+      price: 2100,
+      quantity: 15,
+    },
+    {
+      id: ids.productEngineAirFilter,
+      name: "Engine Air Filter (Performance)",
+      sku: "EL7-FLT-EAF-001",
+      slug: "engine-air-filter-performance",
+      categoryId: productCategoryFilters.id,
+      price: 220,
+      quantity: 25,
+    },
+    {
+      id: ids.productCabinFilter,
+      name: "Cabin Filter",
+      sku: "EL7-FLT-CAB-001",
+      slug: "cabin-filter-001",
+      categoryId: productCategoryFilters.id,
+      price: 180,
+      quantity: 35,
+    },
+    {
+      id: ids.productTire,
+      name: "Tire 195/65R15",
+      sku: "EL7-TIRE-195-65-15",
+      slug: "tire-195-65r15",
+      categoryId: productCategoryTires.id,
+      price: 2600,
+      quantity: 20,
+    },
+    {
+      id: ids.productBrakeDisc,
+      name: "Brake Disc (Front, Pair)",
+      sku: "EL7-BRK-DSC-F01",
+      slug: "brake-disc-front-pair",
+      categoryId: productCategoryBrakes.id,
+      price: 1500,
+      quantity: 18,
+    },
   ];
 
   for (const p of productSeed) {
@@ -408,7 +589,9 @@ async function main(): Promise<void> {
     });
 
     await prisma.inventory.upsert({
-      where: { branchId_productId: { branchId: branch.id, productId: product.id } },
+      where: {
+        branchId_productId: { branchId: branch.id, productId: product.id },
+      },
       create: {
         businessId: business.id,
         branchId: branch.id,
@@ -456,13 +639,21 @@ async function main(): Promise<void> {
 
   await prisma.favoriteBusiness.upsert({
     where: { id: ids.favoriteBusiness },
-    create: { id: ids.favoriteBusiness, customerId: customer.id, businessId: business.id },
+    create: {
+      id: ids.favoriteBusiness,
+      customerId: customer.id,
+      businessId: business.id,
+    },
     update: {},
   });
 
   await prisma.favoriteProduct.upsert({
     where: { id: ids.favoriteProduct },
-    create: { id: ids.favoriteProduct, customerId: customer.id, productId: ids.productEngineOil },
+    create: {
+      id: ids.favoriteProduct,
+      customerId: customer.id,
+      productId: ids.productEngineOil,
+    },
     update: {},
   });
 
@@ -489,17 +680,32 @@ async function main(): Promise<void> {
   // --- Platform settings -----------------------------------------------
   await prisma.platformSetting.upsert({
     where: { id: ids.platformSettingName },
-    create: { id: ids.platformSettingName, key: "platform_name", value: "El7a2ny", updatedByUserId: superAdminUser.id },
+    create: {
+      id: ids.platformSettingName,
+      key: "platform_name",
+      value: "El7a2ny",
+      updatedByUserId: superAdminUser.id,
+    },
     update: {},
   });
   await prisma.platformSetting.upsert({
     where: { id: ids.platformSettingCurrency },
-    create: { id: ids.platformSettingCurrency, key: "default_currency", value: "EGP", updatedByUserId: superAdminUser.id },
+    create: {
+      id: ids.platformSettingCurrency,
+      key: "default_currency",
+      value: "EGP",
+      updatedByUserId: superAdminUser.id,
+    },
     update: {},
   });
   await prisma.platformSetting.upsert({
     where: { id: ids.platformSettingCommission },
-    create: { id: ids.platformSettingCommission, key: "default_commission", value: { servicePercent: 10, productPercent: 8 }, updatedByUserId: superAdminUser.id },
+    create: {
+      id: ids.platformSettingCommission,
+      key: "default_commission",
+      value: { servicePercent: 10, productPercent: 8 },
+      updatedByUserId: superAdminUser.id,
+    },
     update: {},
   });
 }

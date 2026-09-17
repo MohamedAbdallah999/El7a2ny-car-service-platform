@@ -7,6 +7,7 @@ declare global {
         id: string;
         role: UserRole;
       };
+      validatedQuery?: Record<string, unknown>;
     }
   }
 }

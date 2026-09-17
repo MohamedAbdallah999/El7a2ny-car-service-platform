@@ -4,10 +4,12 @@ import { authService } from "./auth.service.js";
 import type {
   AdminInvitationInput,
   AdminRegistrationInput,
+  ForgotPasswordInput,
   LoginInput,
   LoginVerificationInput,
   RegisterInput,
   RegistrationVerificationInput,
+  ResetPasswordInput,
 } from "./auth.validation.js";
 
 export const register = async (req: Request, res: Response): Promise<void> => {
@@ -76,6 +78,26 @@ export const createAdminInvitation = async (
     req.body as AdminInvitationInput,
   );
   res.status(201).json(result);
+};
+
+export const forgotPassword = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const result = await authService.forgotPassword(
+    req.body as ForgotPasswordInput,
+  );
+  res.status(202).json(result);
+};
+
+export const resetPassword = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const result = await authService.resetPassword(
+    req.body as ResetPasswordInput,
+  );
+  res.status(200).json(result);
 };
 
 export const getMe = async (req: Request, res: Response): Promise<void> => {

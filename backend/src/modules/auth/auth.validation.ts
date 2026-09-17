@@ -1,30 +1,15 @@
-import { z } from "zod";
+import { PASSWORD_MAX_BYTES } from "@car-platform/constants";
+import {
+  emailSchema,
+  opaqueTokenSchema,
+  passwordSchema,
+  phoneSchema,
+  uuidSchema,
+  verificationCodeSchema,
+  z,
+} from "@car-platform/validation";
 
-const bcryptMaximumBytes = 72;
-
-const phoneSchema = z
-  .string()
-  .trim()
-  .regex(/^\+[1-9]\d{7,14}$/, "Phone must be in E.164 format");
-
-const emailSchema = z
-  .string()
-  .trim()
-  .email()
-  .max(255)
-  .transform((value) => value.toLowerCase());
-
-export const passwordSchema = z
-  .string()
-  .min(12, "Password must contain at least 12 characters")
-  .refine(
-    (value) => Buffer.byteLength(value, "utf8") <= bcryptMaximumBytes,
-    "Password must not exceed 72 UTF-8 bytes",
-  )
-  .regex(/[a-z]/, "Password must contain a lowercase letter")
-  .regex(/[A-Z]/, "Password must contain an uppercase letter")
-  .regex(/[0-9]/, "Password must contain a number")
-  .regex(/[^A-Za-z0-9]/, "Password must contain a special character");
+export { passwordSchema, verificationCodeSchema };
 
 export const registerSchema = z
   .object({
@@ -43,7 +28,7 @@ export const loginSchema = z
       .string()
       .min(1)
       .refine(
-        (value) => Buffer.byteLength(value, "utf8") <= bcryptMaximumBytes,
+        (value) => Buffer.byteLength(value, "utf8") <= PASSWORD_MAX_BYTES,
         "Invalid password",
       ),
   })
@@ -52,26 +37,22 @@ export const loginSchema = z
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 
-export const verificationCodeSchema = z
-  .string()
-  .regex(/^\d{4,10}$/, "Verification code must contain 4 to 10 digits");
-
 export const registrationVerificationSchema = z
   .object({
-    registrationId: z.string().uuid(),
+    registrationId: uuidSchema,
     code: verificationCodeSchema,
   })
   .strict();
 
 export const loginVerificationSchema = z
   .object({
-    challengeToken: z.string().min(43).max(64),
+    challengeToken: opaqueTokenSchema,
     code: verificationCodeSchema,
   })
   .strict();
 
 export const adminRegistrationSchema = registerSchema
-  .extend({ invitationToken: z.string().min(43).max(64) })
+  .extend({ invitationToken: opaqueTokenSchema })
   .strict();
 
 export const adminInvitationSchema = z
@@ -87,3 +68,18 @@ export type RegistrationVerificationInput = z.infer<
 >;
 export type LoginVerificationInput = z.infer<typeof loginVerificationSchema>;
 export type AdminInvitationInput = z.infer<typeof adminInvitationSchema>;
+
+export const forgotPasswordSchema = z
+  .object({ email: emailSchema })
+  .strict();
+
+export const resetPasswordSchema = z
+  .object({
+    resetToken: opaqueTokenSchema,
+    code: verificationCodeSchema,
+    newPassword: passwordSchema,
+  })
+  .strict();
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

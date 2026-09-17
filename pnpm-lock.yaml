@@ -415,12 +415,30 @@ importers:
       '@car-platform/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
+      '@car-platform/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@car-platform/constants':
+        specifier: workspace:*
+        version: link:../../packages/constants
+      '@car-platform/permissions':
+        specifier: workspace:*
+        version: link:../../packages/permissions
       '@car-platform/types':
         specifier: workspace:*
         version: link:../../packages/types
       '@car-platform/ui-web':
         specifier: workspace:*
         version: link:../../packages/ui-web
+      '@car-platform/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
+      '@car-platform/validation':
+        specifier: workspace:*
+        version: link:../../packages/validation
+      lucide-react:
+        specifier: ^1.46.0
+        version: 1.47.0(react@19.3.0)
       react:
         specifier: ^19.3.0
         version: 19.3.0
@@ -598,6 +616,18 @@ importers:
 
   backend:
     dependencies:
+      '@car-platform/constants':
+        specifier: workspace:*
+        version: link:../packages/constants
+      '@car-platform/types':
+        specifier: workspace:*
+        version: link:../packages/types
+      '@car-platform/utils':
+        specifier: workspace:*
+        version: link:../packages/utils
+      '@car-platform/validation':
+        specifier: workspace:*
+        version: link:../packages/validation
       '@prisma/adapter-pg':
         specifier: ^7.10.0
         version: 7.10.0
@@ -644,6 +674,9 @@ importers:
       '@types/express':
         specifier: ^5.0.6
         version: 5.0.6
+      '@types/jsonwebtoken':
+        specifier: ^9.0.10
+        version: 9.0.10
       '@types/node':
         specifier: ^24.13.4
         version: 24.13.4
@@ -664,6 +697,10 @@ importers:
         version: 6.0.3
 
   packages/api-client:
+    dependencies:
+      '@car-platform/types':
+        specifier: workspace:*
+        version: link:../types
     devDependencies:
       '@car-platform/eslint-config':
         specifier: workspace:*
@@ -679,6 +716,10 @@ importers:
         version: 6.0.3
 
   packages/auth:
+    dependencies:
+      '@car-platform/types':
+        specifier: workspace:*
+        version: link:../types
     devDependencies:
       '@car-platform/eslint-config':
         specifier: workspace:*
@@ -686,6 +727,9 @@ importers:
       '@car-platform/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
+      '@types/node':
+        specifier: ^24.13.4
+        version: 24.13.4
       eslint:
         specifier: ^10.10.0
         version: 10.10.0(jiti@2.7.0)(supports-color@8.1.1)
@@ -731,6 +775,10 @@ importers:
         version: 10.10.0(jiti@2.7.0)(supports-color@8.1.1)
 
   packages/permissions:
+    dependencies:
+      '@car-platform/constants':
+        specifier: workspace:*
+        version: link:../constants
     devDependencies:
       '@car-platform/eslint-config':
         specifier: workspace:*
@@ -746,6 +794,10 @@ importers:
         version: 6.0.3
 
   packages/types:
+    dependencies:
+      '@car-platform/constants':
+        specifier: workspace:*
+        version: link:../constants
     devDependencies:
       '@car-platform/eslint-config':
         specifier: workspace:*
@@ -824,6 +876,13 @@ importers:
         version: 6.0.3
 
   packages/utils:
+    dependencies:
+      '@car-platform/constants':
+        specifier: workspace:*
+        version: link:../constants
+      '@car-platform/types':
+        specifier: workspace:*
+        version: link:../types
     devDependencies:
       '@car-platform/eslint-config':
         specifier: workspace:*
@@ -840,6 +899,9 @@ importers:
 
   packages/validation:
     dependencies:
+      '@car-platform/constants':
+        specifier: workspace:*
+        version: link:../constants
       zod:
         specifier: ^4.6.5
         version: 4.6.5
@@ -850,6 +912,9 @@ importers:
       '@car-platform/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
+      '@types/node':
+        specifier: ^24.13.4
+        version: 24.13.4
       eslint:
         specifier: ^10.10.0
         version: 10.10.0(jiti@2.7.0)(supports-color@8.1.1)
@@ -2494,8 +2559,14 @@ packages:
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
 
+  '@types/jsonwebtoken@9.0.10':
+    resolution: {integrity: sha512-asx5hIG9Qmf/1oStypjanR7iKTv0gXQ1Ov/jfrX6kS/EO0OFni8orbmGCn0672NHR3kXHwpAwR+B368ZGN/2rA==}
+
   '@types/lodash@4.17.25':
     resolution: {integrity: sha512-+K1NIO8I+F9/wNulfVvu23QYd0Pe9/OCqRrim4NoYIf1VoEDL90Ve4ClzpyqBLc7NpGGWRvYNCKZ1BE/Jpf8dQ==}
+
+  '@types/ms@2.1.0':
+    resolution: {integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==}
 
   '@types/node@24.13.4':
     resolution: {integrity: sha512-YJ7EqCstVTzIr0fMr7qul/977en+pQHrfmuKIo6Zr9i75Be21dr3MovcfvGtyvi2HAUrRerWps5sMO9I7WaxDw==}
@@ -4100,6 +4171,11 @@ packages:
   lru.min@1.1.5:
     resolution: {integrity: sha512-5J9ysMYUpYIg9RF2vJpy9SinEmSviFSe0GyPpCQ4L5QSkLAgeLXlTAOu2ZwWUU5m+0SBl6gUU1R1ZQB3aKypfA==}
     engines: {bun: '>=1.0.0', deno: '>=1.30.0', node: '>=8.0.0'}
+
+  lucide-react@1.47.0:
+    resolution: {integrity: sha512-o8C23aXpNQypRY73W7fW02EyvWJinEMXgKeGjFoKym0zj3Q73hD97A1IQps1g8C14HTGsOpZL0Am+xjfgFZAbg==}
+    peerDependencies:
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   make-dir@4.0.0:
     resolution: {integrity: sha512-hXdUTZYIVOt1Ex//jAQi+wTZZpUpwBj/0QsOzqegb3rGMMeJiSEu5xLHnYfBrRV4RH2+OCSOO95Is/7x1WJ4bw==}
@@ -7190,7 +7266,14 @@ snapshots:
 
   '@types/json-schema@7.0.15': {}
 
+  '@types/jsonwebtoken@9.0.10':
+    dependencies:
+      '@types/ms': 2.1.0
+      '@types/node': 24.13.4
+
   '@types/lodash@4.17.25': {}
+
+  '@types/ms@2.1.0': {}
 
   '@types/node@24.13.4':
     dependencies:
@@ -9093,6 +9176,10 @@ snapshots:
       yallist: 3.1.1
 
   lru.min@1.1.5: {}
+
+  lucide-react@1.47.0(react@19.3.0):
+    dependencies:
+      react: 19.3.0
 
   make-dir@4.0.0:
     dependencies:

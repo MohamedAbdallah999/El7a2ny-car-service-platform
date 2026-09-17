@@ -8,10 +8,12 @@ import { signToken } from "./auth.token.js";
 import type {
   AdminInvitationInput,
   AdminRegistrationInput,
+  ForgotPasswordInput,
   LoginInput,
   LoginVerificationInput,
   RegisterInput,
   RegistrationVerificationInput,
+  ResetPasswordInput,
 } from "./auth.validation.js";
 
 const DUMMY_PASSWORD_HASH =
@@ -303,5 +305,68 @@ export const authService = {
     }
 
     return user;
+  },
+
+  async forgotPassword(input: ForgotPasswordInput) {
+    const user = await authRepository.findByEmail(input.email);
+
+    if (!user) {
+      throw new AppError(404, "No account found with this email");
+    }
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new AppError(403, "Password reset is unavailable for this account");
+    }
+    if (!user.phone || !user.phoneVerified) {
+      throw new AppError(
+        403,
+        "Password reset is unavailable for this account",
+      );
+    }
+
+    const resetToken = createOpaqueToken();
+    const tokenRecord = await authRepository.createPasswordResetToken(
+      user.id,
+      hashOpaqueToken(resetToken),
+    );
+
+    try {
+      await phoneVerification.sendCode(user.phone);
+    } catch (error) {
+      await authRepository.deletePasswordResetToken(tokenRecord.id);
+      throw error;
+    }
+
+    return { message: "Verification code sent", resetToken };
+  },
+
+  async resetPassword(input: ResetPasswordInput) {
+    const token = await authRepository.findActivePasswordResetToken(
+      hashOpaqueToken(input.resetToken),
+    );
+
+    if (!token) {
+      throw new AppError(400, "Password reset request has expired");
+    }
+    if (!token.user.phone) {
+      throw new AppError(400, "Password reset request has expired");
+    }
+
+    const approved = await phoneVerification.checkCode(
+      token.user.phone,
+      input.code,
+    );
+    if (!approved) {
+      throw new AppError(400, "Invalid verification code");
+    }
+
+    const passwordHash = await hashPassword(input.newPassword);
+
+    try {
+      await authRepository.resetPassword(token.id, token.userId, passwordHash);
+    } catch {
+      throw new AppError(400, "Password reset request has expired");
+    }
+
+    return { message: "Password reset successful" };
   },
 };
