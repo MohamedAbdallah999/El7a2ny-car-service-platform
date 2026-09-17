@@ -1,0 +1,10 @@
+{
+  "description": "Connects car owners with automotive services and businesses, enabling bookings, repairs, and parts purchases while streamlining business management.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
