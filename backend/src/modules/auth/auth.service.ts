@@ -1,17 +1,20 @@
 import { AppError } from "../../errors/app-error.js";
 import { Prisma, UserRole, UserStatus } from "../../generated/prisma/client.js";
 import { comparePassword, hashPassword } from "./auth.password.js";
-import { phoneVerification } from "./auth.phone-verification.js";
+import { emailVerification } from "./auth.email-verification.js";
 import { authRepository } from "./auth.repository.js";
 import { createOpaqueToken, hashOpaqueToken } from "./auth.secrets.js";
 import { signToken } from "./auth.token.js";
 import type {
   AdminInvitationInput,
   AdminRegistrationInput,
+  ForgotPasswordInput,
   LoginInput,
   LoginVerificationInput,
   RegisterInput,
   RegistrationVerificationInput,
+  ResetPasswordInput,
+  UpdateProfileInput,
 } from "./auth.validation.js";
 
 const DUMMY_PASSWORD_HASH =
@@ -115,8 +118,9 @@ export const authService = {
       throw error;
     }
 
+    let verification;
     try {
-      await phoneVerification.sendCode(input.phone);
+      verification = await emailVerification.sendCode(input.email);
     } catch (error) {
       await authRepository.deletePendingRegistration(pendingRegistration.id);
       throw error;
@@ -125,6 +129,7 @@ export const authService = {
     return {
       message: "Verification code sent",
       registrationId: pendingRegistration.id,
+      ...verification,
     };
   },
 
@@ -137,8 +142,8 @@ export const authService = {
       throw new AppError(400, "Registration verification has expired");
     }
 
-    const approved = await phoneVerification.checkCode(
-      pendingRegistration.phone,
+    const approved = await emailVerification.checkCode(
+      pendingRegistration.email,
       input.code,
     );
 
@@ -186,7 +191,7 @@ export const authService = {
     }
 
     if (user.role === UserRole.CUSTOMER) {
-      if (!user.phoneVerified) {
+      if (!user.emailVerified) {
         throw new AppError(401, "Invalid credentials");
       }
 
@@ -194,7 +199,7 @@ export const authService = {
       return authenticationResponse(user);
     }
 
-    if (!user.phone || !user.phoneVerified) {
+    if (!user.emailVerified) {
       throw new AppError(
         403,
         "Two-factor authentication is unavailable for this account",
@@ -207,8 +212,9 @@ export const authService = {
       hashOpaqueToken(challengeToken),
     );
 
+    let verification;
     try {
-      await phoneVerification.sendCode(user.phone);
+      verification = await emailVerification.sendCode(user.email);
     } catch (error) {
       const challenge = await authRepository.findActiveLoginChallenge(
         hashOpaqueToken(challengeToken),
@@ -223,6 +229,7 @@ export const authService = {
       message: "Verification code sent",
       requiresTwoFactor: true,
       challengeToken,
+      ...verification,
     };
   },
 
@@ -234,16 +241,15 @@ export const authService = {
     if (
       !challenge ||
       challenge.user.status !== UserStatus.ACTIVE ||
-      !challenge.user.phone ||
-      !challenge.user.phoneVerified ||
+      !challenge.user.emailVerified ||
       (challenge.user.role !== UserRole.ADMIN &&
         challenge.user.role !== UserRole.SUPER_ADMIN)
     ) {
       throw new AppError(401, "Invalid or expired verification request");
     }
 
-    const approved = await phoneVerification.checkCode(
-      challenge.user.phone,
+    const approved = await emailVerification.checkCode(
+      challenge.user.email,
       input.code,
     );
 
@@ -303,5 +309,74 @@ export const authService = {
     }
 
     return user;
+  },
+
+  async updateProfile(userId: string, input: UpdateProfileInput) {
+    await this.getProfile(userId);
+    try {
+      return await authRepository.updateProfile(userId, input);
+    } catch (error) {
+      if (isUniqueConstraintError(error)) {
+        throw new AppError(409, "This phone number is already in use");
+      }
+      throw error;
+    }
+  },
+
+  async forgotPassword(input: ForgotPasswordInput) {
+    const user = await authRepository.findByEmail(input.email);
+
+    if (!user) {
+      throw new AppError(404, "No account found with this email");
+    }
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new AppError(403, "Password reset is unavailable for this account");
+    }
+    if (!user.emailVerified) {
+      throw new AppError(403, "Password reset is unavailable for this account");
+    }
+
+    const resetToken = createOpaqueToken();
+    const tokenRecord = await authRepository.createPasswordResetToken(
+      user.id,
+      hashOpaqueToken(resetToken),
+    );
+
+    let verification;
+    try {
+      verification = await emailVerification.sendCode(user.email);
+    } catch (error) {
+      await authRepository.deletePasswordResetToken(tokenRecord.id);
+      throw error;
+    }
+
+    return { message: "Verification code sent", resetToken, ...verification };
+  },
+
+  async resetPassword(input: ResetPasswordInput) {
+    const token = await authRepository.findActivePasswordResetToken(
+      hashOpaqueToken(input.resetToken),
+    );
+
+    if (!token) {
+      throw new AppError(400, "Password reset request has expired");
+    }
+    const approved = await emailVerification.checkCode(
+      token.user.email,
+      input.code,
+    );
+    if (!approved) {
+      throw new AppError(400, "Invalid verification code");
+    }
+
+    const passwordHash = await hashPassword(input.newPassword);
+
+    try {
+      await authRepository.resetPassword(token.id, token.userId, passwordHash);
+    } catch {
+      throw new AppError(400, "Password reset request has expired");
+    }
+
+    return { message: "Password reset successful" };
   },
 };

@@ -26,13 +26,15 @@ The repository uses pnpm workspaces and Turborepo. It contains six independent R
 
 The backend is a modular Express application in `backend/`. It exposes `GET /health` and authentication endpoints under `/api/auth`. Features live in `src/modules`; each module keeps its routes, controllers, business services, repositories, validation, and feature-specific helpers together.
 
-Authentication uses phone verification through Twilio Verify. Customer registration requires a phone OTP before the customer record is created. Admin registration is invitation-only and also requires a phone OTP. Admin and Super Admin accounts must complete password plus phone OTP login; there is no public Super Admin registration endpoint. Configure `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_VERIFY_SERVICE_SID` in `backend/.env` before using these flows.
+Authentication uses email one-time passwords. Customer registration requires an email OTP before the customer record is created. Admin registration is invitation-only and also requires an email OTP. Admin and Super Admin accounts must complete password plus email OTP login; there is no public Super Admin registration endpoint. Production email delivery uses Resend.
+
+Local development defaults to the free `local` email-verification provider. It returns a development-only OTP to the client instead of sending an email; the web registration screen displays and pre-fills that code. Configure `EMAIL_VERIFICATION_PROVIDER=local` and `LOCAL_EMAIL_VERIFICATION_CODE=123456` (or another 4-10 digit value). Production refuses to start with the local provider. For real delivery, use `EMAIL_VERIFICATION_PROVIDER=resend`, `RESEND_API_KEY`, and a `RESEND_FROM_EMAIL` on a verified sending domain. Resend's free plan is sufficient for low-volume development and small deployments.
 
 The authentication API flow is:
 
-- Customer: `POST /api/auth/register`, then `POST /api/auth/register/verify` with the returned `registrationId` and SMS code.
+- Customer: `POST /api/auth/register`, then `POST /api/auth/register/verify` with the returned `registrationId` and email code.
 - Admin: a signed-in Super Admin creates `POST /api/auth/admin/invitations`; the invitee calls `POST /api/auth/admin/register`, then `POST /api/auth/admin/register/verify`.
-- Admin/Super Admin login: `POST /api/auth/login` returns `challengeToken`; submit it with the SMS code to `POST /api/auth/login/verify` to receive a JWT.
+- Admin/Super Admin login: `POST /api/auth/login` returns `challengeToken`; submit it with the email code to `POST /api/auth/login/verify` to receive a JWT.
 
 Backend responsibilities are organized as follows:
 

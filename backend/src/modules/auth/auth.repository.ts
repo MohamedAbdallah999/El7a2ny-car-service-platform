@@ -1,4 +1,8 @@
-import { AuthChallengeType, UserRole } from "../../generated/prisma/client.js";
+import {
+  AuthChallengeType,
+  UserRole,
+  VerificationTokenType,
+} from "../../generated/prisma/client.js";
 import { prisma } from "../../config/database.js";
 
 const registrationExpiry = (): Date => new Date(Date.now() + 10 * 60 * 1000);
@@ -74,7 +78,7 @@ export const authRepository = {
           firstName: pending.firstName,
           lastName: pending.lastName,
           role: pending.role,
-          phoneVerified: true,
+          emailVerified: true,
         },
       });
 
@@ -207,6 +211,77 @@ export const authRepository = {
         status: true,
         createdAt: true,
       },
+    });
+  },
+
+  updateProfile(
+    userId: string,
+    input: { firstName?: string; lastName?: string; phone?: string },
+  ) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: input,
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        role: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+  },
+
+  async createPasswordResetToken(userId: string, tokenHash: string) {
+    return prisma.$transaction(async (transaction) => {
+      await transaction.userVerificationToken.deleteMany({
+        where: { userId, type: VerificationTokenType.PASSWORD_RESET },
+      });
+
+      return transaction.userVerificationToken.create({
+        data: {
+          userId,
+          tokenHash,
+          type: VerificationTokenType.PASSWORD_RESET,
+          expiresAt: registrationExpiry(),
+        },
+      });
+    });
+  },
+
+  deletePasswordResetToken(tokenId: string) {
+    return prisma.userVerificationToken.deleteMany({ where: { id: tokenId } });
+  },
+
+  findActivePasswordResetToken(tokenHash: string) {
+    return prisma.userVerificationToken.findFirst({
+      where: {
+        tokenHash,
+        type: VerificationTokenType.PASSWORD_RESET,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      include: { user: true },
+    });
+  },
+
+  async resetPassword(tokenId: string, userId: string, passwordHash: string) {
+    return prisma.$transaction(async (transaction) => {
+      const consumed = await transaction.userVerificationToken.updateMany({
+        where: { id: tokenId, usedAt: null, expiresAt: { gt: new Date() } },
+        data: { usedAt: new Date() },
+      });
+
+      if (consumed.count !== 1) {
+        throw new Error("Password reset request is no longer available");
+      }
+
+      return transaction.user.update({
+        where: { id: userId },
+        data: { passwordHash },
+      });
     });
   },
 };

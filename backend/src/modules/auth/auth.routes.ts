@@ -1,10 +1,13 @@
 import { Router } from "express";
 import {
   createAdminInvitation,
+  forgotPassword,
   getMe,
   login,
   register,
   registerAdmin,
+  resetPassword,
+  updateMe,
   verifyAdminRegistration,
   verifyLogin,
   verifyRegistration,
@@ -20,10 +23,13 @@ import { UserRole } from "../../generated/prisma/client.js";
 import {
   adminInvitationSchema,
   adminRegistrationSchema,
+  forgotPasswordSchema,
   loginSchema,
   loginVerificationSchema,
   registerSchema,
   registrationVerificationSchema,
+  resetPasswordSchema,
+  updateProfileSchema,
 } from "./auth.validation.js";
 
 const router = Router();
@@ -70,6 +76,18 @@ router.post(
   verifyLogin,
 );
 router.post(
+  "/password/forgot",
+  loginLimiter,
+  validateBody(forgotPasswordSchema, "Invalid email", true),
+  forgotPassword,
+);
+router.post(
+  "/password/reset",
+  verificationLimiter,
+  validateBody(resetPasswordSchema, "Invalid reset data", true),
+  resetPassword,
+);
+router.post(
   "/admin/invitations",
   authenticate,
   authorize(UserRole.SUPER_ADMIN),
@@ -77,5 +95,11 @@ router.post(
   createAdminInvitation,
 );
 router.get("/me", authenticate, getMe);
+router.patch(
+  "/me",
+  authenticate,
+  validateBody(updateProfileSchema, "Invalid profile data", true),
+  updateMe,
+);
 
 export default router;

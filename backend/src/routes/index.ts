@@ -1,8 +1,42 @@
 import { Router } from "express";
 import authRoutes from "../modules/auth/auth.routes.js";
+import businessRoutes from "../modules/business/business.routes.js";
+import vehicleRoutes from "../modules/vehicle/vehicle.routes.js";
+import serviceRoutes from "../modules/service/service.routes.js";
+import bookingRoutes from "../modules/booking/booking.routes.js";
+import serviceRequestRoutes from "../modules/service-request/service-request.routes.js";
+import catalogRoutes from "../modules/catalog/catalog.routes.js";
+import customerAddressRoutes from "../modules/customer-address/customer-address.routes.js";
+import cartRoutes from "../modules/cart/cart.routes.js";
+import orderRoutes from "../modules/order/order.routes.js";
+import paymentRoutes from "../modules/payment/payment.routes.js";
+import reviewRoutes from "../modules/review/review.routes.js";
+import promotionRoutes from "../modules/promotion/promotion.routes.js";
+import notificationRoutes from "../modules/notification/notification.routes.js";
+import disputeRoutes from "../modules/dispute/dispute.routes.js";
+import supportRoutes from "../modules/support/support.routes.js";
+import financialRoutes from "../modules/financial/financial.routes.js";
+import platformAdminRoutes from "../modules/platform-admin/platform-admin.routes.js";
 
 const router = Router();
 
 router.use("/auth", authRoutes);
+router.use("/businesses", businessRoutes);
+router.use("/vehicles", vehicleRoutes);
+router.use("/services", serviceRoutes);
+router.use("/bookings", bookingRoutes);
+router.use("/service-requests", serviceRequestRoutes);
+router.use("/catalog", catalogRoutes);
+router.use("/addresses", customerAddressRoutes);
+router.use("/cart", cartRoutes);
+router.use("/orders", orderRoutes);
+router.use("/payments", paymentRoutes);
+router.use("/reviews", reviewRoutes);
+router.use("/promotions", promotionRoutes);
+router.use("/notifications", notificationRoutes);
+router.use("/disputes", disputeRoutes);
+router.use("/support", supportRoutes);
+router.use("/financial", financialRoutes);
+router.use("/platform-admin", platformAdminRoutes);
 
 export default router;

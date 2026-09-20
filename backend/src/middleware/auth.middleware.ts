@@ -55,6 +55,38 @@ export const authenticate = async (
   next();
 };
 
+// Populates `req.user` when a valid token is present, but never rejects the
+// request otherwise — for endpoints that are public but behave differently
+// for a signed-in caller (e.g. a business admin seeing unpublished reviews
+// alongside everyone else's published ones).
+export const optionalAuthenticate = async (
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  const authHeader = req.headers.authorization;
+  const match = authHeader ? /^Bearer ([^\s]+)$/i.exec(authHeader) : null;
+
+  if (!match?.[1]) {
+    next();
+    return;
+  }
+
+  try {
+    const payload = verifyToken(match[1]);
+    const user = await authRepository.findAuthenticationUserById(payload.userId);
+
+    if (user && user.status === UserStatus.ACTIVE && user.role === payload.role) {
+      req.user = { id: user.id, role: user.role };
+    }
+  } catch {
+    // An invalid/expired token on an optional-auth route is treated as
+    // "anonymous", not an error.
+  }
+
+  next();
+};
+
 export const authorize = (...roles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {

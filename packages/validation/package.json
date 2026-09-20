@@ -21,11 +21,14 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@car-platform/constants": "workspace:*",
+    "libphonenumber-js": "1.13.4",
     "zod": "^4.6.5"
   },
   "devDependencies": {
     "@car-platform/eslint-config": "workspace:*",
     "@car-platform/typescript-config": "workspace:*",
+    "@types/node": "^24.13.4",
     "eslint": "^10.10.0",
     "typescript": "^6.0.3"
   }

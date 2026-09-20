@@ -21,6 +21,9 @@ const getJwtSecret = (): string => {
 };
 
 export const env = {
+  get nodeEnv(): string {
+    return process.env.NODE_ENV ?? "development";
+  },
   get databaseUrl(): string | undefined {
     return process.env.DATABASE_URL;
   },
@@ -33,32 +36,61 @@ export const env = {
   get port(): number {
     return Number(process.env.PORT ?? 4000);
   },
-  get twilioAccountSid(): string | undefined {
-    return process.env.TWILIO_ACCOUNT_SID;
+  get emailVerificationProvider(): "local" | "resend" {
+    const provider =
+      process.env.EMAIL_VERIFICATION_PROVIDER ??
+      (this.nodeEnv === "production" ? "resend" : "local");
+
+    if (provider !== "local" && provider !== "resend") {
+      throw new Error(
+        "EMAIL_VERIFICATION_PROVIDER must be either local or resend",
+      );
+    }
+
+    return provider;
   },
-  get twilioAuthToken(): string | undefined {
-    return process.env.TWILIO_AUTH_TOKEN;
+  get localEmailVerificationCode(): string {
+    return process.env.LOCAL_EMAIL_VERIFICATION_CODE ?? "123456";
   },
-  get twilioVerifyServiceSid(): string | undefined {
-    return process.env.TWILIO_VERIFY_SERVICE_SID;
+  get resendApiKey(): string | undefined {
+    return process.env.RESEND_API_KEY;
+  },
+  get resendFromEmail(): string | undefined {
+    return process.env.RESEND_FROM_EMAIL;
   },
 };
 
 export const validateEnvironment = (): void => {
   getJwtSecret();
 
-  if (process.env.NODE_ENV === "production" && corsOrigins.size === 0) {
+  if (
+    env.emailVerificationProvider === "local" &&
+    !/^\d{4,10}$/.test(env.localEmailVerificationCode)
+  ) {
+    throw new Error(
+      "LOCAL_EMAIL_VERIFICATION_CODE must contain 4 to 10 digits",
+    );
+  }
+
+  if (env.nodeEnv === "production" && corsOrigins.size === 0) {
     throw new Error(
       "CORS_ORIGINS must list the permitted web application origins",
     );
   }
 
   if (
-    process.env.NODE_ENV === "production" &&
-    (!env.twilioAccountSid ||
-      !env.twilioAuthToken ||
-      !env.twilioVerifyServiceSid)
+    env.nodeEnv === "production" &&
+    env.emailVerificationProvider === "local"
   ) {
-    throw new Error("Twilio Verify must be configured in production");
+    throw new Error("Local email verification cannot be used in production");
+  }
+
+  if (
+    env.emailVerificationProvider === "resend" &&
+    (!env.resendApiKey || !env.resendFromEmail)
+  ) {
+    throw new Error(
+      "Resend email verification must be configured when selected",
+    );
   }
 };

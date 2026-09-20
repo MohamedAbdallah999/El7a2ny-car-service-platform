@@ -20,6 +20,10 @@
     "test": "node --test",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
+  "dependencies": {
+    "@car-platform/constants": "workspace:*",
+    "@car-platform/types": "workspace:*"
+  },
   "devDependencies": {
     "@car-platform/eslint-config": "workspace:*",
     "@car-platform/typescript-config": "workspace:*",
