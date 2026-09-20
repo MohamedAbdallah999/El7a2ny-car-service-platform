@@ -14,6 +14,7 @@ import {
   comparePassword,
   hashPassword,
 } from "../src/modules/auth/auth.password.js";
+import { emailVerification } from "../src/modules/auth/auth.email-verification.js";
 
 process.env.JWT_SECRET = "test-secret-that-is-at-least-32-characters-long";
 
@@ -34,6 +35,74 @@ test("password hashing verifies the password and rejects a different password", 
 
   assert.equal(await comparePassword("Correct-Horse-42!", hash), true);
   assert.equal(await comparePassword("Wrong-Horse-42!", hash), false);
+});
+
+test("local email verification returns and validates the development code", async () => {
+  process.env.EMAIL_VERIFICATION_PROVIDER = "local";
+  process.env.LOCAL_EMAIL_VERIFICATION_CODE = "654321";
+
+  const result = await emailVerification.sendCode("user@example.com");
+
+  assert.equal(result.developmentVerificationCode, "654321");
+  assert.equal(
+    await emailVerification.checkCode("user@example.com", "654321"),
+    true,
+  );
+  assert.equal(
+    await emailVerification.checkCode("user@example.com", "000000"),
+    false,
+  );
+});
+
+test("Resend email verification sends and validates a server-generated code", async () => {
+  const originalFetch = globalThis.fetch;
+  const originalProvider = process.env.EMAIL_VERIFICATION_PROVIDER;
+  const originalApiKey = process.env.RESEND_API_KEY;
+  const originalFrom = process.env.RESEND_FROM_EMAIL;
+  let requestBody: Record<string, unknown> | undefined;
+
+  process.env.EMAIL_VERIFICATION_PROVIDER = "resend";
+  process.env.RESEND_API_KEY = "re_test_key";
+  process.env.RESEND_FROM_EMAIL = "El7a2ny <noreply@example.com>";
+  globalThis.fetch = async (_input, init) => {
+    requestBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
+    return new Response(JSON.stringify({ id: "email-id" }), { status: 200 });
+  };
+
+  try {
+    const result = await emailVerification.sendCode("user@example.com");
+    const text = String(requestBody?.text);
+    const code = text.match(/\b\d{6}\b/)?.[0];
+
+    assert.equal(result.developmentVerificationCode, undefined);
+    assert.deepEqual(requestBody?.to, ["user@example.com"]);
+    assert.ok(code);
+    assert.equal(
+      await emailVerification.checkCode("user@example.com", code),
+      true,
+    );
+    assert.equal(
+      await emailVerification.checkCode("different@example.com", code),
+      false,
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalProvider === undefined) {
+      delete process.env.EMAIL_VERIFICATION_PROVIDER;
+    } else {
+      process.env.EMAIL_VERIFICATION_PROVIDER = originalProvider;
+    }
+    if (originalApiKey === undefined) {
+      delete process.env.RESEND_API_KEY;
+    } else {
+      process.env.RESEND_API_KEY = originalApiKey;
+    }
+    if (originalFrom === undefined) {
+      delete process.env.RESEND_FROM_EMAIL;
+    } else {
+      process.env.RESEND_FROM_EMAIL = originalFrom;
+    }
+  }
 });
 
 test("authentication schemas normalize email and reject unknown or oversized input", () => {

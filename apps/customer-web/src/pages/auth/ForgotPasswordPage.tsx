@@ -1,4 +1,11 @@
-import { AuthLayout, Button, Input, OtpInput } from "@car-platform/ui-web";
+import {
+  AuthBrandPanel,
+  AuthHeading,
+  AuthLayout,
+  Button,
+  Input,
+  OtpInput,
+} from "@car-platform/ui-web";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -12,6 +19,7 @@ export function ForgotPasswordPage() {
   const [step, setStep] = useState<Step>("request");
   const [email, setEmail] = useState("");
   const [resetToken, setResetToken] = useState<string | null>(null);
+  const [developmentCode, setDevelopmentCode] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -24,9 +32,13 @@ export function ForgotPasswordPage() {
     try {
       const result = await authApi.forgotPassword({ email });
       setResetToken(result.resetToken);
+      setDevelopmentCode(result.developmentVerificationCode ?? null);
+      setCode(result.developmentVerificationCode ?? "");
       setStep("reset");
     } catch (err) {
-      setError(getErrorMessage(err, "Could not find an account with that email."));
+      setError(
+        getErrorMessage(err, "Could not find an account with that email."),
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -48,28 +60,19 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <AuthLayout
-      brandPanel={
-        <div>
-          <h1 style={{ color: "inherit" }}>EL7A2NY</h1>
-          <p style={{ marginTop: "1rem", opacity: 0.8 }}>
-            Reset your password to get back into your account.
-          </p>
-        </div>
-      }
-    >
+    <AuthLayout brandPanel={<AuthBrandPanel />}>
       {step === "request" ? (
         <form className="form-stack" onSubmit={handleRequestSubmit}>
-          <div>
-            <h2>Forgot password</h2>
-            <p className="muted-text">
-              Enter your email and we&apos;ll text a code to your phone on
-              file.
-            </p>
-          </div>
+          <AuthHeading
+            title="Forgot password"
+            description="Enter your email and we'll send you a verification code."
+          />
 
           {error ? (
-            <p role="alert" className="ui-field__message ui-field__message--error">
+            <p
+              role="alert"
+              className="ui-field__message ui-field__message--error"
+            >
               {error}
             </p>
           ) : null}
@@ -95,16 +98,30 @@ export function ForgotPasswordPage() {
         <form className="form-stack" onSubmit={handleResetSubmit}>
           <div>
             <h2>Enter your new password</h2>
-            <p className="muted-text">Check your phone for the code</p>
+            {developmentCode ? (
+              <p className="muted-text">
+                Local development mode is active; no email was sent. Use code{" "}
+                <strong>{developmentCode}</strong>.
+              </p>
+            ) : (
+              <p className="muted-text">Check your email for the code</p>
+            )}
           </div>
 
           {error ? (
-            <p role="alert" className="ui-field__message ui-field__message--error">
+            <p
+              role="alert"
+              className="ui-field__message ui-field__message--error"
+            >
               {error}
             </p>
           ) : null}
 
-          <OtpInput value={code} onValueChange={setCode} invalid={Boolean(error)} />
+          <OtpInput
+            value={code}
+            onValueChange={setCode}
+            invalid={Boolean(error)}
+          />
           <Input
             label="New password"
             type="password"
@@ -132,7 +149,10 @@ export function ForgotPasswordPage() {
             Your password has been reset. You can now sign in with your new
             password.
           </p>
-          <Button fullWidth onClick={() => navigate("/login", { replace: true })}>
+          <Button
+            fullWidth
+            onClick={() => navigate("/login", { replace: true })}
+          >
             Back to sign in
           </Button>
         </div>

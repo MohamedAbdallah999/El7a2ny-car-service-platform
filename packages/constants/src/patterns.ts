@@ -2,7 +2,7 @@
 // then 7 to 14 more digits. Mirrors backend/src/modules/auth/auth.validation.ts.
 export const PHONE_E164_PATTERN = /^\+[1-9]\d{7,14}$/;
 
-// SMS verification codes sent through Twilio Verify.
+// One-time codes used for email verification and account recovery.
 export const VERIFICATION_CODE_PATTERN = /^\d{4,10}$/;
 
 // Opaque tokens (admin invitation tokens, login challenge tokens) are

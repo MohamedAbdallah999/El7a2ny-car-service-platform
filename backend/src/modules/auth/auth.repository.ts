@@ -78,7 +78,7 @@ export const authRepository = {
           firstName: pending.firstName,
           lastName: pending.lastName,
           role: pending.role,
-          phoneVerified: true,
+          emailVerified: true,
         },
       });
 

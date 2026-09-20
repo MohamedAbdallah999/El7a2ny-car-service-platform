@@ -43,6 +43,7 @@ export interface AuthSuccessResponse {
 export interface RegistrationStartedResponse {
   message: string;
   registrationId: string;
+  developmentVerificationCode?: string;
 }
 
 // POST /api/auth/register/verify when the pending registration was for an
@@ -62,6 +63,7 @@ export interface LoginChallengeResponse {
   message: string;
   requiresTwoFactor: true;
   challengeToken: string;
+  developmentVerificationCode?: string;
 }
 
 // POST /api/auth/login

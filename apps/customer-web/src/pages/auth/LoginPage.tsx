@@ -1,4 +1,11 @@
-import { AuthLayout, Button, Input } from "@car-platform/ui-web";
+import {
+  AuthBrandPanel,
+  AuthHeading,
+  AuthLayout,
+  AuthTabs,
+  Button,
+  Input,
+} from "@car-platform/ui-web";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -34,31 +41,25 @@ export function LoginPage() {
   }
 
   return (
-    <AuthLayout
-      brandPanel={
-        <div>
-          <h1 style={{ color: "inherit" }}>EL7A2NY</h1>
-          <p style={{ marginTop: "1rem", opacity: 0.8 }}>
-            Book trusted car services and shop genuine parts, all in one
-            place.
-          </p>
-        </div>
-      }
-    >
-      <form className="form-stack" onSubmit={handleSubmit}>
-        <div>
-          <h2>Welcome back</h2>
-          <p className="muted-text">Sign in to your account</p>
-        </div>
+    <AuthLayout brandPanel={<AuthBrandPanel />}>
+      <AuthTabs active="login" />
+      <form className="form-stack ui-auth-form" onSubmit={handleSubmit}>
+        <AuthHeading
+          title="Welcome back"
+          description="Sign in to your El7a2ny account"
+        />
 
         {error ? (
-          <p role="alert" className="ui-field__message ui-field__message--error">
+          <p
+            role="alert"
+            className="ui-field__message ui-field__message--error"
+          >
             {error}
           </p>
         ) : null}
 
         <Input
-          label="Email"
+          label="Email Address"
           type="email"
           autoComplete="email"
           required
@@ -76,17 +77,17 @@ export function LoginPage() {
         />
 
         <div className="spread-row">
-          <Link to="/forgot-password" className="muted-text">
+          <Link to="/forgot-password" className="ui-auth-link">
             Forgot password?
           </Link>
         </div>
 
         <Button type="submit" fullWidth loading={isSubmitting}>
-          Sign in
+          Sign In
         </Button>
 
         <p className="muted-text" style={{ textAlign: "center" }}>
-          New here? <Link to="/register">Create an account</Link>
+          Don&apos;t have an account? <Link to="/register">Create one</Link>
         </p>
       </form>
     </AuthLayout>
