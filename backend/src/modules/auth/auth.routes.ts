@@ -7,6 +7,7 @@ import {
   register,
   registerAdmin,
   resetPassword,
+  updateMe,
   verifyAdminRegistration,
   verifyLogin,
   verifyRegistration,
@@ -28,6 +29,7 @@ import {
   registerSchema,
   registrationVerificationSchema,
   resetPasswordSchema,
+  updateProfileSchema,
 } from "./auth.validation.js";
 
 const router = Router();
@@ -93,5 +95,11 @@ router.post(
   createAdminInvitation,
 );
 router.get("/me", authenticate, getMe);
+router.patch(
+  "/me",
+  authenticate,
+  validateBody(updateProfileSchema, "Invalid profile data", true),
+  updateMe,
+);
 
 export default router;

@@ -8,6 +8,7 @@ import {
   Button,
   Input,
   OtpInput,
+  PhoneInput,
   Select,
 } from "@car-platform/ui-web";
 import { useEffect, useState } from "react";
@@ -191,14 +192,11 @@ export function RegisterPage() {
               value={form.email}
               onChange={(event) => updateField("email", event.target.value)}
             />
-            <Input
+            <PhoneInput
               label="Phone Number"
-              type="tel"
-              hint="E.164 format, e.g. +201000000000"
-              autoComplete="tel"
               required
               value={form.phone}
-              onChange={(event) => updateField("phone", event.target.value)}
+              onValueChange={(phone) => updateField("phone", phone)}
             />
             <Input
               label="Password"

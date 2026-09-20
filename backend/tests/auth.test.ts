@@ -118,6 +118,14 @@ test("authentication schemas normalize email and reject unknown or oversized inp
   assert.equal(registration.firstName, "Test");
   assert.equal(registration.phone, "+201000000000");
   assert.equal(
+    registerSchema.parse({ ...registration, phone: "+14155552671" }).phone,
+    "+14155552671",
+  );
+  assert.equal(
+    registerSchema.safeParse({ ...registration, phone: "+20123" }).success,
+    false,
+  );
+  assert.equal(
     registerSchema.safeParse({ ...registration, unexpected: true }).success,
     false,
   );

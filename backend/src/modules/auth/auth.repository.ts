@@ -214,6 +214,26 @@ export const authRepository = {
     });
   },
 
+  updateProfile(
+    userId: string,
+    input: { firstName?: string; lastName?: string; phone?: string },
+  ) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: input,
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        role: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+  },
+
   async createPasswordResetToken(userId: string, tokenHash: string) {
     return prisma.$transaction(async (transaction) => {
       await transaction.userVerificationToken.deleteMany({

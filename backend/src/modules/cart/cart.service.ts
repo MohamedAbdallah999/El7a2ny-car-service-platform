@@ -7,7 +7,18 @@ import type {
 } from "./cart.validation.js";
 
 const CART_ITEMS_INCLUDE = {
-  items: { include: { product: true }, orderBy: { createdAt: "asc" as const } },
+  items: {
+    include: {
+      product: {
+        include: {
+          images: { orderBy: { sortOrder: "asc" as const } },
+          business: true,
+          vehicleCompatibilities: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "asc" as const },
+  },
 };
 
 const requireCustomerId = async (userId: string): Promise<string> => {
@@ -58,7 +69,9 @@ const getOrCreateActiveCart = async (customerId: string) => {
   }
 };
 
-const summarize = (cart: { items: { quantity: number; unitPrice: unknown }[] }) => {
+const summarize = (cart: {
+  items: { quantity: number; unitPrice: unknown }[];
+}) => {
   const subtotal = cart.items.reduce(
     (sum, item) => sum + Number(item.unitPrice) * item.quantity,
     0,
@@ -84,7 +97,9 @@ export const cartService = {
     }
 
     const cart = await getOrCreateActiveCart(customerId);
-    const existing = cart.items.find((item) => item.productId === input.productId);
+    const existing = cart.items.find(
+      (item) => item.productId === input.productId,
+    );
 
     if (existing) {
       await prisma.cartItem.update({

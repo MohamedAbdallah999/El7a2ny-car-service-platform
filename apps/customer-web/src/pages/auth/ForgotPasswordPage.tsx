@@ -6,9 +6,10 @@ import {
   Input,
   OtpInput,
 } from "@car-platform/ui-web";
+import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { authApi } from "../../lib/api";
 import { getErrorMessage } from "../../lib/error";
 
@@ -59,8 +60,33 @@ export function ForgotPasswordPage() {
     }
   }
 
+  function handleBack() {
+    setError(null);
+    if (step === "reset") {
+      setStep("request");
+      setCode("");
+      setNewPassword("");
+      setResetToken(null);
+      setDevelopmentCode(null);
+      return;
+    }
+    navigate("/login");
+  }
+
   return (
     <AuthLayout brandPanel={<AuthBrandPanel />}>
+      {step !== "done" ? (
+        <Button
+          className="forgot-password-back"
+          variant="ghost"
+          size="sm"
+          startIcon={<ArrowLeft size={16} />}
+          onClick={handleBack}
+        >
+          {step === "reset" ? "Back" : "Back to sign in"}
+        </Button>
+      ) : null}
+
       {step === "request" ? (
         <form className="form-stack" onSubmit={handleRequestSubmit}>
           <AuthHeading
@@ -89,10 +115,6 @@ export function ForgotPasswordPage() {
           <Button type="submit" fullWidth loading={isSubmitting}>
             Send code
           </Button>
-
-          <p className="muted-text" style={{ textAlign: "center" }}>
-            <Link to="/login">Back to sign in</Link>
-          </p>
         </form>
       ) : step === "reset" ? (
         <form className="form-stack" onSubmit={handleResetSubmit}>

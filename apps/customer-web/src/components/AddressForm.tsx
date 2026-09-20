@@ -1,5 +1,5 @@
 import type { AddressPayload } from "@car-platform/api-client";
-import { Button, Input } from "@car-platform/ui-web";
+import { Button, Input, PhoneInput } from "@car-platform/ui-web";
 import { useState } from "react";
 import type { FormEvent } from "react";
 
@@ -23,7 +23,7 @@ export function AddressForm({
   isSubmitting,
 }: {
   initialValue?: Partial<AddressPayload>;
-  onSubmit: (payload: AddressPayload) => void;
+  onSubmit: (payload: AddressPayload) => void | Promise<void>;
   onCancel?: () => void;
   isSubmitting?: boolean;
 }) {
@@ -32,7 +32,10 @@ export function AddressForm({
     ...initialValue,
   });
 
-  function update<K extends keyof AddressPayload>(key: K, value: AddressPayload[K]) {
+  function update<K extends keyof AddressPayload>(
+    key: K,
+    value: AddressPayload[K],
+  ) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
@@ -55,14 +58,15 @@ export function AddressForm({
         value={form.recipientName}
         onChange={(event) => update("recipientName", event.target.value)}
       />
-      <Input
+      <PhoneInput
         label="Phone"
         required
         value={form.phone}
-        onChange={(event) => update("phone", event.target.value)}
+        onValueChange={(phone) => update("phone", phone)}
       />
       <Input
         label="Address line 1"
+        autoComplete="street-address"
         required
         value={form.addressLine1}
         onChange={(event) => update("addressLine1", event.target.value)}
@@ -74,12 +78,14 @@ export function AddressForm({
       />
       <Input
         label="City"
+        autoComplete="address-level2"
         required
         value={form.city}
         onChange={(event) => update("city", event.target.value)}
       />
       <Input
         label="Country"
+        autoComplete="country-name"
         required
         value={form.country}
         onChange={(event) => update("country", event.target.value)}

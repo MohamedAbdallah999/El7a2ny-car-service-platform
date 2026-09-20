@@ -36,5 +36,9 @@
   },
   "peerDependencies": {
     "react": ">=19"
+  },
+  "dependencies": {
+    "country-flag-icons": "1.6.4",
+    "libphonenumber-js": "1.13.4"
   }
 }

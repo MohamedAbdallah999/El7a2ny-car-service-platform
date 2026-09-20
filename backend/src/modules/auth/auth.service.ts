@@ -14,6 +14,7 @@ import type {
   RegisterInput,
   RegistrationVerificationInput,
   ResetPasswordInput,
+  UpdateProfileInput,
 } from "./auth.validation.js";
 
 const DUMMY_PASSWORD_HASH =
@@ -308,6 +309,18 @@ export const authService = {
     }
 
     return user;
+  },
+
+  async updateProfile(userId: string, input: UpdateProfileInput) {
+    await this.getProfile(userId);
+    try {
+      return await authRepository.updateProfile(userId, input);
+    } catch (error) {
+      if (isUniqueConstraintError(error)) {
+        throw new AppError(409, "This phone number is already in use");
+      }
+      throw error;
+    }
   },
 
   async forgotPassword(input: ForgotPasswordInput) {

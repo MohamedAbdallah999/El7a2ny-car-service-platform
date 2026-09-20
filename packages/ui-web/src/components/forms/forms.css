@@ -76,6 +76,135 @@
   background: var(--color-surface-subtle);
 }
 
+.ui-phone {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-min-height);
+  align-items: stretch;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+.ui-phone:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-soft);
+}
+.ui-phone--error {
+  border-color: var(--color-error);
+}
+.ui-phone--disabled {
+  background: var(--color-surface-subtle);
+  opacity: 0.6;
+}
+.ui-phone__country {
+  position: static;
+  flex: none;
+}
+.ui-phone__country > summary {
+  display: flex;
+  min-width: 7.25rem;
+  height: 100%;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: 0 var(--spacing-3);
+  border-right: 1px solid var(--color-border);
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  list-style: none;
+}
+.ui-phone__country > summary::-webkit-details-marker {
+  display: none;
+}
+.ui-phone__country > summary:hover {
+  background: var(--color-surface-subtle);
+}
+.ui-phone__flag {
+  --CountryFlagIcon-height: 1rem;
+
+  width: 1.5rem;
+  height: 1rem;
+  flex: 0 0 1.5rem;
+  border-radius: 0.125rem;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 8%);
+}
+.ui-phone__chevron {
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: 0.65rem;
+}
+.ui-phone__input {
+  width: 100%;
+  min-width: 0;
+  min-height: calc(var(--control-min-height) - 2px);
+  border: 0;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  background: transparent;
+  outline: 0;
+}
+.ui-phone__input:focus-visible {
+  outline: 0;
+}
+.ui-phone__menu {
+  position: absolute;
+  top: calc(100% + var(--spacing-2));
+  left: 0;
+  z-index: 100;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(24rem, calc(100vw - 2rem));
+  height: min(22rem, calc(100dvh - 2rem));
+  max-height: calc(100dvh - 2rem);
+  gap: var(--spacing-2);
+  padding: var(--spacing-3);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: 0 1rem 2.5rem rgb(0 0 0 / 16%);
+}
+.ui-phone__search {
+  width: 100%;
+  min-height: 2.5rem;
+}
+.ui-phone__options {
+  display: grid;
+  min-height: 0;
+  max-height: 100%;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+.ui-phone__option {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--spacing-3);
+  width: 100%;
+  padding: var(--spacing-2) var(--spacing-3);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-primary);
+  text-align: left;
+}
+.ui-phone__option:hover,
+.ui-phone__option--selected {
+  background: var(--color-surface-subtle);
+}
+.ui-phone__option--selected {
+  color: var(--color-primary);
+}
+.ui-phone__option strong {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
 .ui-select {
   width: 100%;
   min-height: var(--control-min-height);
@@ -199,6 +328,10 @@
 }
 
 @media (max-width: 29.999rem) {
+  .ui-phone__country > summary {
+    min-width: 6.5rem;
+    padding-inline: var(--spacing-2);
+  }
   .ui-otp__inputs {
     gap: var(--spacing-1);
   }

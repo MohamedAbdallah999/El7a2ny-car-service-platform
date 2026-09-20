@@ -1,5 +1,9 @@
 import { z } from "zod";
 import {
+  isValidPhoneNumber,
+  parsePhoneNumberFromString,
+} from "libphonenumber-js/max";
+import {
   OPAQUE_TOKEN_MAX_LENGTH,
   OPAQUE_TOKEN_MIN_LENGTH,
   PASSWORD_MAX_BYTES,
@@ -25,7 +29,9 @@ export const emailSchema = z
 export const phoneSchema = z
   .string()
   .trim()
-  .regex(PHONE_E164_PATTERN, "Phone must be in E.164 format");
+  .regex(PHONE_E164_PATTERN, "Phone must be in E.164 format")
+  .refine((value) => isValidPhoneNumber(value), "Phone number is invalid")
+  .transform((value) => parsePhoneNumberFromString(value)!.number);
 
 export const passwordSchema = z
   .string()

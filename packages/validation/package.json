@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@car-platform/constants": "workspace:*",
+    "libphonenumber-js": "1.13.4",
     "zod": "^4.6.5"
   },
   "devDependencies": {

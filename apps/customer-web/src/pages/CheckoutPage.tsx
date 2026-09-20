@@ -1,41 +1,45 @@
-import type { CustomerAddress } from "@car-platform/types";
-import {
-  Button,
-  Card,
-  EmptyState,
-  PageHeader,
-  SuccessState,
-} from "@car-platform/ui-web";
+import type { CartSummary, CustomerAddress, Order } from "@car-platform/types";
+import { Button, EmptyState } from "@car-platform/ui-web";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AddressForm } from "../components/AddressForm";
-import { addressesApi, ordersApi } from "../lib/api";
+import { addressesApi, cartApi, ordersApi } from "../lib/api";
 import { getErrorMessage } from "../lib/error";
+
+function formatAmount(value: number | string) {
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 2,
+  }).format(Number(value));
+}
 
 export function CheckoutPage() {
   const navigate = useNavigate();
   const [addresses, setAddresses] = useState<CustomerAddress[]>([]);
+  const [cart, setCart] = useState<CartSummary | null>(null);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
     null,
   );
+  const [customerNotes, setCustomerNotes] = useState("");
   const [isAddingAddress, setIsAddingAddress] = useState(false);
+  const [isSavingAddress, setIsSavingAddress] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const [order, setOrder] = useState<Order | null>(null);
 
   useEffect(() => {
-    addressesApi
-      .list()
-      .then(({ addresses: list }) => {
+    Promise.all([addressesApi.list(), cartApi.get()])
+      .then(([addressResult, cartResult]) => {
+        const list = addressResult.addresses;
         setAddresses(list);
+        setCart(cartResult);
         setSelectedAddressId(
-          (prev) =>
-            prev ?? list.find((a) => a.isDefault)?.id ?? list[0]?.id ?? null,
+          list.find((address) => address.isDefault)?.id ?? list[0]?.id ?? null,
         );
+        setIsAddingAddress(list.length === 0);
       })
-      .catch((err) =>
-        setError(getErrorMessage(err, "Could not load your addresses.")),
+      .catch((reason: unknown) =>
+        setError(getErrorMessage(reason, "Could not load checkout.")),
       )
       .finally(() => setIsLoading(false));
   }, []);
@@ -43,109 +47,224 @@ export function CheckoutPage() {
   async function handleAddAddress(
     payload: Parameters<typeof addressesApi.create>[0],
   ) {
-    const { address } = await addressesApi.create(payload);
-    setAddresses((prev) => [...prev, address]);
-    setSelectedAddressId(address.id);
-    setIsAddingAddress(false);
+    setError(null);
+    setIsSavingAddress(true);
+    try {
+      const { address } = await addressesApi.create(payload);
+      setAddresses((current) => [
+        address,
+        ...current.map((item) =>
+          address.isDefault ? { ...item, isDefault: false } : item,
+        ),
+      ]);
+      setSelectedAddressId(address.id);
+      setIsAddingAddress(false);
+    } catch (reason) {
+      setError(getErrorMessage(reason, "Could not save this address."));
+    } finally {
+      setIsSavingAddress(false);
+    }
   }
 
   async function handlePlaceOrder() {
-    if (!selectedAddressId) return;
+    if (!selectedAddressId || !cart?.cart.items.length) return;
     setError(null);
     setIsSubmitting(true);
     try {
-      const { order } = await ordersApi.checkout({
+      const result = await ordersApi.checkout({
         shippingAddressId: selectedAddressId,
+        customerNotes: customerNotes.trim() || undefined,
       });
-      setOrderNumber(order.orderNumber);
-    } catch (err) {
-      setError(getErrorMessage(err, "Could not place this order."));
+      setOrder(result.order);
+      setCart(null);
+      window.dispatchEvent(new Event("cart-updated"));
+    } catch (reason) {
+      setError(getErrorMessage(reason, "Could not place this order."));
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  if (orderNumber) {
+  if (isLoading) return <p className="loading-block">Loading checkout…</p>;
+
+  if (order) {
     return (
-      <SuccessState
-        title="Order placed"
-        description={`Your order ${orderNumber} has been placed.`}
-        actions={
-          <Button onClick={() => navigate("/orders")}>View my orders</Button>
+      <div className="checkout-success">
+        <div className="checkout-success__check" aria-hidden="true">
+          ✓
+        </div>
+        <h1>Order Placed!</h1>
+        <p>Your order has been saved and is now being prepared.</p>
+        <div className="checkout-success__reference">
+          <span>Order Reference</span>
+          <strong>{order.orderNumber}</strong>
+        </div>
+        <div className="checkout-success__actions">
+          <Button variant="secondary" onClick={() => navigate("/orders")}>
+            View Orders
+          </Button>
+          <Button onClick={() => navigate("/")}>Back to Home</Button>
+        </div>
+      </div>
+    );
+  }
+
+  const items = cart?.cart.items ?? [];
+  if (!error && items.length === 0) {
+    return (
+      <EmptyState
+        title="Your cart is empty"
+        description="Add parts to your cart before checking out."
+        action={
+          <Button onClick={() => navigate("/parts")}>Browse Parts</Button>
         }
       />
     );
   }
 
+  const currency = items[0]?.product.currency ?? "EGP";
+
   return (
-    <div className="center-column form-stack">
-      <PageHeader title="Checkout" subtitle="Choose a delivery address" />
+    <div className="checkout-page">
+      <header className="customer-page__heading">
+        <h1>Checkout</h1>
+        <p>Confirm your delivery address and order details.</p>
+      </header>
 
       {error ? (
-        <p role="alert" className="ui-field__message ui-field__message--error">
+        <p
+          role="alert"
+          className="ui-field__message ui-field__message--error checkout-page__error"
+        >
           {error}
         </p>
       ) : null}
 
-      {isLoading ? (
-        <p className="loading-block">Loading…</p>
-      ) : isAddingAddress ? (
-        <AddressForm
-          onSubmit={handleAddAddress}
-          onCancel={() => setIsAddingAddress(false)}
-        />
-      ) : (
-        <>
-          {addresses.length === 0 ? (
-            <EmptyState
-              title="No saved addresses"
-              description="Add an address to continue."
-            />
+      <div className="checkout-layout">
+        <section className="checkout-section">
+          <div className="checkout-section__heading">
+            <div>
+              <span>1</span>
+              <div>
+                <h2>Delivery Address</h2>
+                <p>Choose where your order should be delivered.</p>
+              </div>
+            </div>
+            {!isAddingAddress && addresses.length ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setIsAddingAddress(true)}
+              >
+                Add Address
+              </Button>
+            ) : null}
+          </div>
+
+          {isAddingAddress ? (
+            <div className="checkout-address-form">
+              <AddressForm
+                onSubmit={handleAddAddress}
+                onCancel={
+                  addresses.length ? () => setIsAddingAddress(false) : undefined
+                }
+                isSubmitting={isSavingAddress}
+              />
+            </div>
           ) : (
-            <div className="form-stack">
+            <div className="checkout-addresses">
               {addresses.map((address) => (
                 <label
+                  className={`checkout-address${selectedAddressId === address.id ? " checkout-address--selected" : ""}`}
                   key={address.id}
-                  className="spread-row"
-                  style={{ cursor: "pointer" }}
                 >
-                  <span>
-                    <strong>{address.recipientName}</strong>
-                    <br />
-                    <span className="muted-text">
-                      {address.addressLine1}, {address.city}
-                    </span>
-                  </span>
                   <input
                     type="radio"
                     name="address"
                     checked={selectedAddressId === address.id}
                     onChange={() => setSelectedAddressId(address.id)}
                   />
+                  <span>
+                    <strong>{address.label || address.recipientName}</strong>
+                    <small>
+                      {address.recipientName} · {address.phone}
+                    </small>
+                    <small>
+                      {address.addressLine1}
+                      {address.addressLine2
+                        ? `, ${address.addressLine2}`
+                        : ""}, {address.city}, {address.country}
+                    </small>
+                  </span>
+                  {address.isDefault ? <em>Default</em> : null}
                 </label>
               ))}
             </div>
           )}
 
-          <Button variant="secondary" onClick={() => setIsAddingAddress(true)}>
-            Add a new address
-          </Button>
+          <label className="checkout-notes">
+            <span>Delivery notes (optional)</span>
+            <textarea
+              rows={4}
+              maxLength={2000}
+              placeholder="Add instructions for your order"
+              value={customerNotes}
+              onChange={(event) => setCustomerNotes(event.target.value)}
+            />
+          </label>
+        </section>
 
-          <Card className="spread-row">
-            <strong>Total</strong>
-            <span className="muted-text">Calculated at order creation</span>
-          </Card>
-
+        <aside className="checkout-summary">
+          <h2>Order Summary</h2>
+          <div className="checkout-summary__items">
+            {items.map((item) => (
+              <div key={item.id}>
+                <span>
+                  <strong>{item.product.name}</strong>
+                  <small>Qty {item.quantity}</small>
+                </span>
+                <strong>
+                  {formatAmount(Number(item.unitPrice) * item.quantity)}{" "}
+                  {item.product.currency}
+                </strong>
+              </div>
+            ))}
+          </div>
+          <dl>
+            <div>
+              <dt>Subtotal</dt>
+              <dd>
+                {formatAmount(cart?.subtotal ?? 0)} {currency}
+              </dd>
+            </div>
+            <div>
+              <dt>Delivery</dt>
+              <dd>Free</dd>
+            </div>
+            <div className="checkout-summary__total">
+              <dt>Total</dt>
+              <dd>
+                {formatAmount(cart?.subtotal ?? 0)} {currency}
+              </dd>
+            </div>
+          </dl>
           <Button
             fullWidth
-            disabled={!selectedAddressId}
+            disabled={!selectedAddressId || isAddingAddress}
             loading={isSubmitting}
-            onClick={handlePlaceOrder}
+            onClick={() => void handlePlaceOrder()}
           >
-            Place order
+            Place Order
           </Button>
-        </>
-      )}
+          <Button
+            fullWidth
+            variant="secondary"
+            onClick={() => navigate("/cart")}
+          >
+            Back to Cart
+          </Button>
+        </aside>
+      </div>
     </div>
   );
 }

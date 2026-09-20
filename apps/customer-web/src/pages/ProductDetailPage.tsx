@@ -40,6 +40,7 @@ export function ProductDetailPage() {
     setAddedMessage(null);
     try {
       await cartApi.addItem(product.id, quantity);
+      window.dispatchEvent(new Event("cart-updated"));
       setAddedMessage("Added to cart.");
     } catch (err) {
       setError(getErrorMessage(err, "Could not add this item to your cart."));
@@ -59,19 +60,13 @@ export function ProductDetailPage() {
   }
 
   return (
-    <div
-      className="page-grid"
-      style={{
-        gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
-        alignItems: "start",
-      }}
-    >
-      <div>
+    <div className="product-detail-layout">
+      <div className="product-detail-layout__media">
         {product.images?.[0] ? (
           <img
             src={product.images[0].imageUrl}
             alt=""
-            style={{ width: "100%", borderRadius: "var(--radius-lg)" }}
+            className="product-detail-layout__image"
           />
         ) : null}
       </div>

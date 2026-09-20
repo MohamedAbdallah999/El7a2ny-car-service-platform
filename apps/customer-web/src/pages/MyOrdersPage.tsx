@@ -77,6 +77,7 @@ export function MyOrdersPage() {
       for (const item of order.items) {
         await cartApi.addItem(item.productId, item.quantity);
       }
+      window.dispatchEvent(new Event("cart-updated"));
       setNotice(`Items from ${order.orderNumber} were added to your cart.`);
     } catch (reason) {
       setError(

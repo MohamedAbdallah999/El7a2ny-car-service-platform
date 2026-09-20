@@ -62,6 +62,12 @@ export interface ResetPasswordResponse {
   message: string;
 }
 
+export interface UpdateProfilePayload {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+}
+
 // Thin, typed wrapper over /api/auth/*. Every consuming app (customer-web,
 // admin-web, ...) builds one of these from its own createApiClient instance
 // rather than hand-rolling fetch calls per screen.
@@ -109,6 +115,12 @@ export const createAuthApi = (client: ApiClient) => ({
     }),
 
   getMe: () => client.request<{ user: AuthProfile }>("/auth/me"),
+
+  updateMe: (payload: UpdateProfilePayload) =>
+    client.request<{ user: AuthProfile }>("/auth/me", {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
 
   forgotPassword: (payload: ForgotPasswordPayload) =>
     client.request<ForgotPasswordResponse>("/auth/password/forgot", {

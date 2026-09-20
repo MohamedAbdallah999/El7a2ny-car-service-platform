@@ -4,6 +4,8 @@ export { FileUpload } from "./FileUpload.js";
 export type { FileUploadProps } from "./FileUpload.js";
 export { Input } from "./Input.js";
 export type { InputProps, InputState } from "./Input.js";
+export { PhoneInput } from "./PhoneInput.js";
+export type { PhoneInputProps } from "./PhoneInput.js";
 export { OtpInput } from "./OtpInput.js";
 export type { OtpInputProps } from "./OtpInput.js";
 export { Select } from "./Select.js";
