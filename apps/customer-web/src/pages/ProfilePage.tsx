@@ -1,5 +1,5 @@
 import type { CustomerAddress } from "@car-platform/types";
-import { Avatar, Button, Card, PageHeader, ProfileMenuRow } from "@car-platform/ui-web";
+import { Avatar, Button, Card, ProfileMenuRow } from "@car-platform/ui-web";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
@@ -19,14 +19,18 @@ export function ProfilePage() {
     addressesApi
       .list()
       .then(({ addresses: list }) => setAddresses(list))
-      .catch((err) => setError(getErrorMessage(err, "Could not load addresses.")));
+      .catch((err) =>
+        setError(getErrorMessage(err, "Could not load addresses.")),
+      );
   }
 
   useEffect(() => {
-    if (isManagingAddresses) loadAddresses();
-  }, [isManagingAddresses]);
+    loadAddresses();
+  }, []);
 
-  async function handleAddAddress(payload: Parameters<typeof addressesApi.create>[0]) {
+  async function handleAddAddress(
+    payload: Parameters<typeof addressesApi.create>[0],
+  ) {
     await addressesApi.create(payload);
     setIsAddingAddress(false);
     loadAddresses();
@@ -45,9 +49,7 @@ export function ProfilePage() {
   if (!user) return null;
 
   return (
-    <div className="center-column form-stack" style={{ gap: "1.5rem" }}>
-      <PageHeader title="Profile" />
-
+    <div className="center-column customer-page profile-page">
       <Card className="spread-row">
         <div className="inline-actions">
           <Avatar name={`${user.firstName} ${user.lastName}`} size="lg" />
@@ -64,9 +66,28 @@ export function ProfilePage() {
       <Card style={{ padding: 0 }}>
         <div style={{ padding: "0 1rem" }}>
           <ProfileMenuRow
-            label="Manage addresses"
-            description={`${addresses.length || ""} saved`}
+            label="Personal Information"
+            description="Name, phone, email, and location"
+          />
+          <ProfileMenuRow
+            label="My Vehicles"
+            description="View and manage your cars"
+            onActivate={() => navigate("/cars")}
+          />
+          <ProfileMenuRow
+            label="Saved Addresses"
+            description={`${addresses.length} ${addresses.length === 1 ? "address" : "addresses"} saved`}
             onActivate={() => setIsManagingAddresses((v) => !v)}
+          />
+          <ProfileMenuRow
+            label="Order History"
+            description="View all your orders"
+            onActivate={() => navigate("/orders")}
+          />
+          <ProfileMenuRow
+            label="Booking History"
+            description="View all your appointments"
+            onActivate={() => navigate("/bookings")}
           />
         </div>
       </Card>
@@ -74,7 +95,10 @@ export function ProfilePage() {
       {isManagingAddresses ? (
         <Card className="form-stack">
           {error ? (
-            <p role="alert" className="ui-field__message ui-field__message--error">
+            <p
+              role="alert"
+              className="ui-field__message ui-field__message--error"
+            >
               {error}
             </p>
           ) : null}
@@ -88,7 +112,11 @@ export function ProfilePage() {
                   {address.addressLine1}, {address.city}
                 </span>
               </span>
-              <Button size="sm" variant="ghost" onClick={() => handleRemoveAddress(address.id)}>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleRemoveAddress(address.id)}
+              >
                 Remove
               </Button>
             </div>
@@ -100,7 +128,10 @@ export function ProfilePage() {
               onCancel={() => setIsAddingAddress(false)}
             />
           ) : (
-            <Button variant="secondary" onClick={() => setIsAddingAddress(true)}>
+            <Button
+              variant="secondary"
+              onClick={() => setIsAddingAddress(true)}
+            >
               Add a new address
             </Button>
           )}

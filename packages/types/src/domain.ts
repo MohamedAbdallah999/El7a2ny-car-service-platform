@@ -134,6 +134,17 @@ export interface ProductImage {
   isPrimary: boolean;
 }
 
+export interface ProductVehicleCompatibility {
+  id: string;
+  productId: string;
+  makeId: string | null;
+  modelId: string | null;
+  yearFrom: number | null;
+  yearTo: number | null;
+  engine: string | null;
+  notes: string | null;
+}
+
 export interface ProductCategory {
   id: string;
   name: string;
@@ -159,6 +170,7 @@ export interface Product {
   images?: ProductImage[];
   category?: ProductCategory;
   business?: BusinessSummary;
+  vehicleCompatibilities?: ProductVehicleCompatibility[];
 }
 
 export interface CartItem {
@@ -205,6 +217,7 @@ export interface OrderItem {
   productNameSnapshot: string;
   skuSnapshot: string;
   product?: Product;
+  business?: BusinessSummary;
 }
 
 export interface Order {

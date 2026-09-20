@@ -13,7 +13,12 @@ import {
 } from "@car-platform/ui-web";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { bookingsApi, businessesApi, servicesApi, vehiclesApi } from "../lib/api";
+import {
+  bookingsApi,
+  businessesApi,
+  servicesApi,
+  vehiclesApi,
+} from "../lib/api";
 import { getErrorMessage } from "../lib/error";
 
 export function BookingPage() {
@@ -65,7 +70,8 @@ export function BookingPage() {
         }
       })
       .catch((err) => {
-        if (!cancelled) setLoadError(getErrorMessage(err, "Could not load booking details."));
+        if (!cancelled)
+          setLoadError(getErrorMessage(err, "Could not load booking details."));
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -103,7 +109,12 @@ export function BookingPage() {
   }
 
   if (loadError || !service) {
-    return <EmptyState title="Could not load this service" description={loadError ?? undefined} />;
+    return (
+      <EmptyState
+        title="Could not load this service"
+        description={loadError ?? undefined}
+      />
+    );
   }
 
   if (bookingNumber) {
@@ -112,7 +123,9 @@ export function BookingPage() {
         title="Booking requested"
         description={`Your booking ${bookingNumber} is pending confirmation from the business.`}
         actions={
-          <Button onClick={() => navigate("/bookings")}>View my bookings</Button>
+          <Button onClick={() => navigate("/bookings")}>
+            View my bookings
+          </Button>
         }
       />
     );
@@ -184,12 +197,15 @@ export function BookingPage() {
                 >
                   <span>
                     <strong>
-                      {vehicle.make?.name} {vehicle.model?.name} ({vehicle.year})
+                      {vehicle.make?.name} {vehicle.model?.name} ({vehicle.year}
+                      )
                     </strong>
                     {vehicle.licensePlate ? (
                       <>
                         <br />
-                        <span className="muted-text">{vehicle.licensePlate}</span>
+                        <span className="muted-text">
+                          {vehicle.licensePlate}
+                        </span>
                       </>
                     ) : null}
                   </span>
@@ -254,7 +270,10 @@ export function BookingPage() {
             {service.currency}
           </p>
           {submitError ? (
-            <p role="alert" className="ui-field__message ui-field__message--error">
+            <p
+              role="alert"
+              className="ui-field__message ui-field__message--error"
+            >
               {submitError}
             </p>
           ) : null}

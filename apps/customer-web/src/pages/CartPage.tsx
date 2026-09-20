@@ -1,5 +1,11 @@
 import type { CartSummary } from "@car-platform/types";
-import { Button, Card, EmptyState, Input, PageHeader } from "@car-platform/ui-web";
+import {
+  Button,
+  Card,
+  EmptyState,
+  Input,
+  PageHeader,
+} from "@car-platform/ui-web";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { cartApi } from "../lib/api";
@@ -15,7 +21,9 @@ export function CartPage() {
     cartApi
       .get()
       .then(setSummary)
-      .catch((err) => setError(getErrorMessage(err, "Could not load your cart.")))
+      .catch((err) =>
+        setError(getErrorMessage(err, "Could not load your cart.")),
+      )
       .finally(() => setIsLoading(false));
   }, []);
 
@@ -41,14 +49,18 @@ export function CartPage() {
   const items = summary?.cart.items ?? [];
 
   return (
-    <div className="form-stack" style={{ gap: "1.5rem" }}>
-      <PageHeader title="Your Cart" />
+    <div className="customer-page cart-page">
+      <PageHeader
+        title={`Your Cart (${items.length} ${items.length === 1 ? "item" : "items"})`}
+      />
 
       {items.length === 0 ? (
         <EmptyState
           title="Your cart is empty"
           description="Browse parts and accessories to get started."
-          action={<Button onClick={() => navigate("/parts")}>Shop parts</Button>}
+          action={
+            <Button onClick={() => navigate("/parts")}>Shop parts</Button>
+          }
         />
       ) : (
         <>
@@ -71,7 +83,11 @@ export function CartPage() {
                     }
                     style={{ maxWidth: "5rem" }}
                   />
-                  <Button variant="ghost" size="sm" onClick={() => removeItem(item.id)}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeItem(item.id)}
+                  >
                     Remove
                   </Button>
                 </div>

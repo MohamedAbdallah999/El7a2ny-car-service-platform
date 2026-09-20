@@ -1,23 +1,30 @@
 import type { Vehicle, VehicleMake, VehicleModel } from "@car-platform/types";
-import { Button, Card, EmptyState, Input, PageHeader, Select, VehicleCard } from "@car-platform/ui-web";
+import { Button, Card, EmptyState, Input, Select } from "@car-platform/ui-web";
+import { CarFront, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { vehiclesApi } from "../lib/api";
 import { getErrorMessage } from "../lib/error";
 
 export function MyCarsPage() {
+  const navigate = useNavigate();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [makes, setMakes] = useState<VehicleMake[]>([]);
   const [models, setModels] = useState<VehicleModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isAdding, setIsAdding] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const [makeId, setMakeId] = useState("");
-  const [modelId, setModelId] = useState("");
-  const [year, setYear] = useState(new Date().getFullYear());
-  const [licensePlate, setLicensePlate] = useState("");
+  const [form, setForm] = useState({
+    makeId: "",
+    modelId: "",
+    year: new Date().getFullYear(),
+    trim: "",
+    color: "",
+    licensePlate: "",
+  });
 
   function fetchVehicles() {
     return Promise.all([vehiclesApi.listMine(), vehiclesApi.listMakes()])
@@ -25,77 +32,102 @@ export function MyCarsPage() {
         setVehicles(vehicleResult.vehicles);
         setMakes(makeResult.makes);
       })
-      .catch((err) => setError(getErrorMessage(err, "Could not load your vehicles.")))
+      .catch((reason: unknown) =>
+        setError(getErrorMessage(reason, "Could not load your vehicles.")),
+      )
       .finally(() => setIsLoading(false));
   }
 
-  // Reload after a mutation (add/remove): called from event handlers, so
-  // setting isLoading synchronously there is fine — only the mount effect
-  // below must not update state synchronously.
-  function reload() {
-    setIsLoading(true);
-    fetchVehicles();
+  useEffect(() => {
+    void fetchVehicles();
+  }, []);
+  useEffect(() => {
+    if (!form.makeId) return;
+    vehiclesApi
+      .listModels(form.makeId)
+      .then(({ models: list }) => setModels(list))
+      .catch(() => setModels([]));
+  }, [form.makeId]);
+
+  function openAddForm() {
+    setEditingId(null);
+    setForm({
+      makeId: "",
+      modelId: "",
+      year: new Date().getFullYear(),
+      trim: "",
+      color: "",
+      licensePlate: "",
+    });
+    setModels([]);
+    setIsEditing(true);
   }
 
-  useEffect(() => {
-    fetchVehicles();
-  }, []);
+  function openEditForm(vehicle: Vehicle) {
+    setEditingId(vehicle.id);
+    setForm({
+      makeId: vehicle.makeId,
+      modelId: vehicle.modelId,
+      year: vehicle.year,
+      trim: vehicle.trim ?? "",
+      color: vehicle.color ?? "",
+      licensePlate: vehicle.licensePlate ?? "",
+    });
+    setIsEditing(true);
+  }
 
-  useEffect(() => {
-    // Stale `models` briefly remain while a new make's list loads, but the
-    // Select is disabled whenever `makeId` is empty, so nothing incorrect
-    // is ever selectable.
-    if (!makeId) return;
-    vehiclesApi.listModels(makeId).then(({ models: list }) => setModels(list));
-  }, [makeId]);
-
-  async function handleAddVehicle(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!makeId || !modelId) return;
+    if (!form.makeId || !form.modelId) return;
     setIsSubmitting(true);
     setError(null);
+    const payload = {
+      ...form,
+      trim: form.trim || undefined,
+      color: form.color || undefined,
+      licensePlate: form.licensePlate || undefined,
+    };
     try {
-      await vehiclesApi.create({ makeId, modelId, year, licensePlate: licensePlate || undefined });
-      setIsAdding(false);
-      setMakeId("");
-      setModelId("");
-      setLicensePlate("");
-      reload();
-    } catch (err) {
-      setError(getErrorMessage(err, "Could not add this vehicle."));
+      if (editingId) await vehiclesApi.update(editingId, payload);
+      else await vehiclesApi.create(payload);
+      setIsEditing(false);
+      setEditingId(null);
+      setIsLoading(true);
+      await fetchVehicles();
+    } catch (reason) {
+      setError(getErrorMessage(reason, "Could not save this vehicle."));
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  async function handleRemove(vehicleId: string) {
-    try {
-      await vehiclesApi.remove(vehicleId);
-      reload();
-    } catch (err) {
-      setError(getErrorMessage(err, "Could not remove this vehicle."));
-    }
-  }
-
   return (
-    <div className="form-stack" style={{ gap: "1.5rem" }}>
-      <div className="spread-row">
-        <PageHeader title="My Cars" />
-        <Button onClick={() => setIsAdding((v) => !v)}>
-          {isAdding ? "Cancel" : "Add a vehicle"}
-        </Button>
-      </div>
-
+    <div className="customer-page cars-page">
+      <header className="cars-page__header">
+        <h1>My Cars</h1>
+        <Button onClick={openAddForm}>+ Add Vehicle</Button>
+      </header>
       {error ? (
         <p role="alert" className="ui-field__message ui-field__message--error">
           {error}
         </p>
       ) : null}
-
-      {isAdding ? (
-        <Card>
-          <form className="form-stack" onSubmit={handleAddVehicle}>
-            <Select label="Make" required value={makeId} onChange={(event) => setMakeId(event.target.value)}>
+      {isEditing ? (
+        <Card className="car-form-card">
+          <form className="car-form-grid" onSubmit={handleSubmit}>
+            <Select
+              label="Make"
+              required
+              value={form.makeId}
+              onChange={(event) => {
+                setModels([]);
+                setForm((current) => ({
+                  ...current,
+                  makeId: event.target.value,
+                  modelId: "",
+                }));
+              }}
+            >
               <option value="">Select a make</option>
               {makes.map((make) => (
                 <option key={make.id} value={make.id}>
@@ -106,9 +138,14 @@ export function MyCarsPage() {
             <Select
               label="Model"
               required
-              value={modelId}
-              disabled={!makeId}
-              onChange={(event) => setModelId(event.target.value)}
+              value={form.modelId}
+              disabled={!form.makeId}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  modelId: event.target.value,
+                }))
+              }
             >
               <option value="">Select a model</option>
               {models.map((model) => (
@@ -121,41 +158,101 @@ export function MyCarsPage() {
               label="Year"
               type="number"
               required
-              value={year}
-              onChange={(event) => setYear(Number(event.target.value))}
+              value={form.year}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  year: Number(event.target.value),
+                }))
+              }
             />
             <Input
-              label="License plate (optional)"
-              value={licensePlate}
-              onChange={(event) => setLicensePlate(event.target.value)}
+              label="Engine / Trim"
+              value={form.trim}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, trim: event.target.value }))
+              }
             />
-            <Button type="submit" loading={isSubmitting}>
-              Save vehicle
-            </Button>
+            <Input
+              label="Color"
+              value={form.color}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  color: event.target.value,
+                }))
+              }
+            />
+            <Input
+              label="License Plate"
+              value={form.licensePlate}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  licensePlate: event.target.value,
+                }))
+              }
+            />
+            <div className="car-form-actions">
+              <Button variant="secondary" onClick={() => setIsEditing(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" loading={isSubmitting}>
+                {editingId ? "Save Changes" : "Save Vehicle"}
+              </Button>
+            </div>
           </form>
         </Card>
       ) : null}
-
       {isLoading ? (
         <p className="loading-block">Loading…</p>
       ) : vehicles.length === 0 ? (
-        <EmptyState title="No vehicles yet" description="Add your first vehicle to start booking services." />
+        <EmptyState
+          title="No vehicles yet"
+          description="Add your first vehicle to start booking services."
+        />
       ) : (
-        <div className="page-grid page-grid--2col">
+        <div className="cars-grid">
           {vehicles.map((vehicle) => (
-            <VehicleCard
-              key={vehicle.id}
-              make={vehicle.make?.name}
-              model={vehicle.model?.name}
-              year={vehicle.year}
-              metadata={vehicle.licensePlate ?? undefined}
-              action={
-                <Button size="sm" variant="ghost" onClick={() => handleRemove(vehicle.id)}>
-                  Remove
-                </Button>
-              }
-            />
+            <article className="car-card" key={vehicle.id}>
+              <div className="car-card__image">
+                {vehicle.imageUrl ? (
+                  <img src={vehicle.imageUrl} alt="" />
+                ) : (
+                  <CarFront size={52} />
+                )}
+              </div>
+              <div className="car-card__body">
+                <div className="car-card__title">
+                  <h2>
+                    {vehicle.make?.name} {vehicle.model?.name}
+                  </h2>
+                  <span>{vehicle.year}</span>
+                </div>
+                <p>
+                  {[vehicle.trim, vehicle.color].filter(Boolean).join(" · ") ||
+                    "Vehicle details"}
+                </p>
+                <p>{vehicle.licensePlate || "No license plate"}</p>
+                <div className="car-card__actions">
+                  <Button
+                    size="xs"
+                    variant="secondary"
+                    onClick={() => openEditForm(vehicle)}
+                  >
+                    Edit
+                  </Button>
+                  <Button size="xs" onClick={() => navigate("/services")}>
+                    Book Service
+                  </Button>
+                </div>
+              </div>
+            </article>
           ))}
+          <button className="add-car-card" onClick={openAddForm}>
+            <Plus size={30} />
+            <span>Add New Vehicle</span>
+          </button>
         </div>
       )}
     </div>

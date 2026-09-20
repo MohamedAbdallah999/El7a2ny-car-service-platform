@@ -7,6 +7,7 @@ import { cartApi } from "../lib/api";
 
 const NAV_LINKS = [
   { to: "/", label: "Home", end: true },
+  { to: "/services", label: "Find Services" },
   { to: "/shops", label: "Shops" },
   { to: "/parts", label: "Parts" },
   { to: "/cars", label: "My Cars" },

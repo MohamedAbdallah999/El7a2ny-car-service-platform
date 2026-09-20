@@ -16,6 +16,7 @@ import { ProductDetailPage } from "./pages/ProductDetailPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { ShopDetailPage } from "./pages/ShopDetailPage";
 import { ShopsPage } from "./pages/ShopsPage";
+import { ServicesPage } from "./pages/ServicesPage";
 
 function App() {
   return (
@@ -29,9 +30,13 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/services" element={<ServicesPage />} />
           <Route path="/shops" element={<ShopsPage />} />
           <Route path="/shops/:slug" element={<ShopDetailPage />} />
-          <Route path="/book/:businessId/:serviceId" element={<BookingPage />} />
+          <Route
+            path="/book/:businessId/:serviceId"
+            element={<BookingPage />}
+          />
           <Route path="/parts" element={<PartsPage />} />
           <Route path="/parts/:slug" element={<ProductDetailPage />} />
           <Route path="/cart" element={<CartPage />} />

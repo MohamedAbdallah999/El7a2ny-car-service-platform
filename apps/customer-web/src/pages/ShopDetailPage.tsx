@@ -83,7 +83,10 @@ export function ShopDetailPage() {
           <div>
             <h1>{business.name}</h1>
             <div className="inline-actions" style={{ marginTop: "0.5rem" }}>
-              <StarRating value={Number(business.averageRating)} reviewCount={business.totalReviews} />
+              <StarRating
+                value={Number(business.averageRating)}
+                reviewCount={business.totalReviews}
+              />
               {business.verificationStatus === "VERIFIED" ? (
                 <Badge variant="success">Verified</Badge>
               ) : null}
@@ -115,9 +118,7 @@ export function ShopDetailPage() {
                 <Button
                   size="sm"
                   disabled={!service.isOnlineBooking}
-                  onClick={() =>
-                    navigate(`/book/${business.id}/${service.id}`)
-                  }
+                  onClick={() => navigate(`/book/${business.id}/${service.id}`)}
                 >
                   Book
                 </Button>

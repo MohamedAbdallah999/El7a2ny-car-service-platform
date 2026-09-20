@@ -1,5 +1,11 @@
 import type { CustomerAddress } from "@car-platform/types";
-import { Button, Card, EmptyState, PageHeader, SuccessState } from "@car-platform/ui-web";
+import {
+  Button,
+  Card,
+  EmptyState,
+  PageHeader,
+  SuccessState,
+} from "@car-platform/ui-web";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AddressForm } from "../components/AddressForm";
@@ -9,7 +15,9 @@ import { getErrorMessage } from "../lib/error";
 export function CheckoutPage() {
   const navigate = useNavigate();
   const [addresses, setAddresses] = useState<CustomerAddress[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
+    null,
+  );
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,14 +30,19 @@ export function CheckoutPage() {
       .then(({ addresses: list }) => {
         setAddresses(list);
         setSelectedAddressId(
-          (prev) => prev ?? list.find((a) => a.isDefault)?.id ?? list[0]?.id ?? null,
+          (prev) =>
+            prev ?? list.find((a) => a.isDefault)?.id ?? list[0]?.id ?? null,
         );
       })
-      .catch((err) => setError(getErrorMessage(err, "Could not load your addresses.")))
+      .catch((err) =>
+        setError(getErrorMessage(err, "Could not load your addresses.")),
+      )
       .finally(() => setIsLoading(false));
   }, []);
 
-  async function handleAddAddress(payload: Parameters<typeof addressesApi.create>[0]) {
+  async function handleAddAddress(
+    payload: Parameters<typeof addressesApi.create>[0],
+  ) {
     const { address } = await addressesApi.create(payload);
     setAddresses((prev) => [...prev, address]);
     setSelectedAddressId(address.id);
@@ -57,7 +70,9 @@ export function CheckoutPage() {
       <SuccessState
         title="Order placed"
         description={`Your order ${orderNumber} has been placed.`}
-        actions={<Button onClick={() => navigate("/orders")}>View my orders</Button>}
+        actions={
+          <Button onClick={() => navigate("/orders")}>View my orders</Button>
+        }
       />
     );
   }
@@ -82,11 +97,18 @@ export function CheckoutPage() {
       ) : (
         <>
           {addresses.length === 0 ? (
-            <EmptyState title="No saved addresses" description="Add an address to continue." />
+            <EmptyState
+              title="No saved addresses"
+              description="Add an address to continue."
+            />
           ) : (
             <div className="form-stack">
               {addresses.map((address) => (
-                <label key={address.id} className="spread-row" style={{ cursor: "pointer" }}>
+                <label
+                  key={address.id}
+                  className="spread-row"
+                  style={{ cursor: "pointer" }}
+                >
                   <span>
                     <strong>{address.recipientName}</strong>
                     <br />

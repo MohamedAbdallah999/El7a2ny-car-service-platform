@@ -53,11 +53,19 @@ export function ProductDetailPage() {
   }
 
   if (error || !product) {
-    return <EmptyState title="Product not found" description={error ?? undefined} />;
+    return (
+      <EmptyState title="Product not found" description={error ?? undefined} />
+    );
   }
 
   return (
-    <div className="page-grid" style={{ gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", alignItems: "start" }}>
+    <div
+      className="page-grid"
+      style={{
+        gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
+        alignItems: "start",
+      }}
+    >
       <div>
         {product.images?.[0] ? (
           <img
@@ -72,7 +80,12 @@ export function ProductDetailPage() {
         {product.brand ? <Badge variant="muted">{product.brand}</Badge> : null}
         <h1>{product.name}</h1>
         <p className="muted-text">SKU: {product.sku}</p>
-        <p style={{ fontSize: "var(--font-size-2xl)", fontWeight: "var(--font-weight-black)" }}>
+        <p
+          style={{
+            fontSize: "var(--font-size-2xl)",
+            fontWeight: "var(--font-weight-black)",
+          }}
+        >
           {product.price} {product.currency}
         </p>
         {product.description ? <p>{product.description}</p> : null}
@@ -83,7 +96,9 @@ export function ProductDetailPage() {
             label="Quantity"
             min={1}
             value={quantity}
-            onChange={(event) => setQuantity(Math.max(1, Number(event.target.value)))}
+            onChange={(event) =>
+              setQuantity(Math.max(1, Number(event.target.value)))
+            }
             style={{ maxWidth: "6rem" }}
           />
         </div>
