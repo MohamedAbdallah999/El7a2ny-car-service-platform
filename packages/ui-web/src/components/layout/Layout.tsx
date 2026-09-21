@@ -55,3 +55,34 @@ export type DividerProps = HTMLAttributes<HTMLHRElement>;
 export function Divider({ className, ...props }: DividerProps) {
   return <hr {...props} className={classNames("ui-divider", className)} />;
 }
+
+export interface DashboardLayoutProps {
+  sidebar: ReactNode;
+  header?: ReactNode;
+  mobileNavigation?: ReactNode;
+  children: ReactNode;
+}
+
+export function DashboardLayout({
+  children,
+  header,
+  mobileNavigation,
+  sidebar,
+}: DashboardLayoutProps) {
+  return (
+    <div className="ui-dashboard-layout">
+      <div className="ui-dashboard-layout__sidebar">{sidebar}</div>
+      <main className="ui-dashboard-layout__main">
+        {header ? (
+          <div className="ui-dashboard-layout__header">{header}</div>
+        ) : null}
+        {children}
+      </main>
+      {mobileNavigation ? (
+        <div className="ui-dashboard-layout__mobile-nav">
+          {mobileNavigation}
+        </div>
+      ) : null}
+    </div>
+  );
+}

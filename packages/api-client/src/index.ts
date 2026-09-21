@@ -12,3 +12,4 @@ export * from "./cart-api.js";
 export * from "./orders-api.js";
 export * from "./addresses-api.js";
 export * from "./reviews-api.js";
+export * from "./dashboard-api.js";
