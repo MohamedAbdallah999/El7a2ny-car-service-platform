@@ -1,5 +1,4 @@
 import type {
-  AdminInvitationResponse,
   AuthProfile,
   AuthSuccessResponse,
   LoginResponse,
@@ -18,10 +17,6 @@ export interface RegisterPayload {
   phone: string;
 }
 
-export interface AdminRegisterPayload extends RegisterPayload {
-  invitationToken: string;
-}
-
 export interface VerifyRegistrationPayload {
   registrationId: string;
   code: string;
@@ -35,11 +30,6 @@ export interface LoginPayload {
 export interface VerifyLoginPayload {
   challengeToken: string;
   code: string;
-}
-
-export interface CreateAdminInvitationPayload {
-  email: string;
-  phone: string;
 }
 
 export interface ForgotPasswordPayload {
@@ -84,7 +74,7 @@ export const createAuthApi = (client: ApiClient) => ({
       body: JSON.stringify(payload),
     }),
 
-  registerAdmin: (payload: AdminRegisterPayload) =>
+  registerAdmin: (payload: RegisterPayload) =>
     client.request<RegistrationStartedResponse>("/auth/admin/register", {
       method: "POST",
       body: JSON.stringify(payload),
@@ -104,12 +94,6 @@ export const createAuthApi = (client: ApiClient) => ({
 
   verifyLogin: (payload: VerifyLoginPayload) =>
     client.request<AuthSuccessResponse>("/auth/login/verify", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }),
-
-  createAdminInvitation: (payload: CreateAdminInvitationPayload) =>
-    client.request<AdminInvitationResponse>("/auth/admin/invitations", {
       method: "POST",
       body: JSON.stringify(payload),
     }),

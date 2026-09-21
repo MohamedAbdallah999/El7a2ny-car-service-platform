@@ -4,7 +4,6 @@ import type { NextFunction, Request, Response } from "express";
 import { UserRole } from "../src/generated/prisma/client.js";
 import { authorize } from "../src/middleware/auth.middleware.js";
 import {
-  adminRegistrationSchema,
   loginSchema,
   passwordSchema,
   registerSchema,
@@ -149,13 +148,7 @@ test("authentication schemas normalize email and reject unknown or oversized inp
     }).success,
     false,
   );
-  assert.equal(
-    adminRegistrationSchema.safeParse({
-      ...registration,
-      invitationToken: "too-short",
-    }).success,
-    false,
-  );
+  assert.equal(registerSchema.safeParse(registration).success, true);
 });
 
 test("authorization allows only explicitly permitted roles", () => {

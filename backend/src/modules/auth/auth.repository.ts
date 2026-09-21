@@ -7,8 +7,6 @@ import { prisma } from "../../config/database.js";
 
 const registrationExpiry = (): Date => new Date(Date.now() + 10 * 60 * 1000);
 const loginChallengeExpiry = (): Date => new Date(Date.now() + 10 * 60 * 1000);
-const invitationExpiry = (): Date =>
-  new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
 export const authRepository = {
   findUserByEmailOrPhone(email: string, phone: string) {
@@ -19,15 +17,6 @@ export const authRepository = {
     return prisma.user.findUnique({ where: { email } });
   },
 
-  findPendingRegistrationByContact(email: string, phone: string) {
-    return prisma.pendingRegistration.findFirst({
-      where: {
-        OR: [{ email }, { phone }],
-        expiresAt: { gt: new Date() },
-      },
-    });
-  },
-
   async createPendingRegistration(input: {
     email: string;
     phone: string;
@@ -35,7 +24,6 @@ export const authRepository = {
     firstName: string;
     lastName: string;
     role: UserRole;
-    adminInvitationId?: string;
   }) {
     return prisma.$transaction(async (transaction) => {
       await transaction.pendingRegistration.deleteMany({
@@ -87,64 +75,13 @@ export const authRepository = {
       }
 
       if (pending.role === UserRole.ADMIN) {
-        if (!pending.adminInvitationId) {
-          throw new Error("Admin registration is missing an invitation");
-        }
-
         await transaction.admin.create({ data: { userId: user.id } });
-        const invitation = await transaction.adminInvitation.updateMany({
-          where: { id: pending.adminInvitationId, usedAt: null },
-          data: { usedAt: new Date() },
-        });
-
-        if (invitation.count !== 1) {
-          throw new Error("Admin invitation is no longer available");
-        }
       }
 
       await transaction.pendingRegistration.delete({
         where: { id: pending.id },
       });
       return user;
-    });
-  },
-
-  async createAdminInvitation(input: {
-    email: string;
-    phone: string;
-    tokenHash: string;
-    createdByUserId: string;
-  }) {
-    return prisma.$transaction(async (transaction) => {
-      await transaction.adminInvitation.deleteMany({
-        where: { OR: [{ email: input.email }, { phone: input.phone }] },
-      });
-
-      return transaction.adminInvitation.create({
-        data: { ...input, expiresAt: invitationExpiry() },
-      });
-    });
-  },
-
-  findAdminInvitation(email: string, phone: string, tokenHash: string) {
-    return prisma.adminInvitation.findFirst({
-      where: {
-        email,
-        phone,
-        tokenHash,
-        usedAt: null,
-        expiresAt: { gt: new Date() },
-      },
-    });
-  },
-
-  findActiveAdminInvitationByContact(email: string, phone: string) {
-    return prisma.adminInvitation.findFirst({
-      where: {
-        OR: [{ email }, { phone }],
-        usedAt: null,
-        expiresAt: { gt: new Date() },
-      },
     });
   },
 

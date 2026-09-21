@@ -3,11 +3,14 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import "@car-platform/ui-web/globals.css";
 import App from "./App";
+import { AdminAuthProvider } from "./auth/AdminAuthProvider";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
-      <App />
+      <AdminAuthProvider>
+        <App />
+      </AdminAuthProvider>
     </BrowserRouter>
   </StrictMode>,
 );

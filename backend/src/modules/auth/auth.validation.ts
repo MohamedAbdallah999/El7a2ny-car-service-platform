@@ -64,23 +64,10 @@ export const loginVerificationSchema = z
   })
   .strict();
 
-export const adminRegistrationSchema = registerSchema
-  .extend({ invitationToken: opaqueTokenSchema })
-  .strict();
-
-export const adminInvitationSchema = z
-  .object({
-    email: emailSchema,
-    phone: phoneSchema,
-  })
-  .strict();
-
-export type AdminRegistrationInput = z.infer<typeof adminRegistrationSchema>;
 export type RegistrationVerificationInput = z.infer<
   typeof registrationVerificationSchema
 >;
 export type LoginVerificationInput = z.infer<typeof loginVerificationSchema>;
-export type AdminInvitationInput = z.infer<typeof adminInvitationSchema>;
 
 export const forgotPasswordSchema = z.object({ email: emailSchema }).strict();
 

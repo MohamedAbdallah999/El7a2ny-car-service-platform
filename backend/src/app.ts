@@ -5,6 +5,7 @@ import { corsOrigins } from "./config/env.js";
 import { AppError } from "./errors/app-error.js";
 import { errorHandler } from "./middleware/error.middleware.js";
 import routes from "./routes/index.js";
+import uploadRoutes from "./modules/upload/upload.routes.js";
 
 export const app = express();
 
@@ -22,6 +23,11 @@ app.use(
     },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   }),
+);
+app.use(
+  "/api/uploads",
+  express.json({ limit: "8mb", strict: true }),
+  uploadRoutes,
 );
 app.use(express.json({ limit: "100kb", strict: true }));
 

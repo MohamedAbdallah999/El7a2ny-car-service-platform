@@ -6,14 +6,13 @@ import {
 import {
   OPAQUE_TOKEN_MAX_LENGTH,
   OPAQUE_TOKEN_MIN_LENGTH,
-  PASSWORD_MAX_BYTES,
-  PASSWORD_MIN_LENGTH,
   PHONE_E164_PATTERN,
   VERIFICATION_CODE_PATTERN,
   DEFAULT_PAGE,
   DEFAULT_PAGE_SIZE,
   MAX_PAGE_SIZE,
 } from "@car-platform/constants";
+import { getPasswordValidationIssues } from "./password.js";
 
 // Shared, framework-independent Zod primitives. Backend route validation and
 // frontend form validation should both build on these instead of redefining
@@ -33,20 +32,11 @@ export const phoneSchema = z
   .refine((value) => isValidPhoneNumber(value), "Phone number is invalid")
   .transform((value) => parsePhoneNumberFromString(value)!.number);
 
-export const passwordSchema = z
-  .string()
-  .min(
-    PASSWORD_MIN_LENGTH,
-    `Password must contain at least ${PASSWORD_MIN_LENGTH} characters`,
-  )
-  .refine(
-    (value) => Buffer.byteLength(value, "utf8") <= PASSWORD_MAX_BYTES,
-    `Password must not exceed ${PASSWORD_MAX_BYTES} UTF-8 bytes`,
-  )
-  .regex(/[a-z]/, "Password must contain a lowercase letter")
-  .regex(/[A-Z]/, "Password must contain an uppercase letter")
-  .regex(/[0-9]/, "Password must contain a number")
-  .regex(/[^A-Za-z0-9]/, "Password must contain a special character");
+export const passwordSchema = z.string().superRefine((value, context) => {
+  for (const message of getPasswordValidationIssues(value)) {
+    context.addIssue({ code: "custom", message });
+  }
+});
 
 export const verificationCodeSchema = z
   .string()

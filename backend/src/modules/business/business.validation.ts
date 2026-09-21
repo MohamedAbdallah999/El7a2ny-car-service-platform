@@ -13,6 +13,43 @@ const timeOfDaySchema = z
   .string()
   .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Time must be in HH:mm format");
 
+const businessHourSchema = z
+  .object({
+    dayOfWeek: z.number().int().min(0).max(6),
+    openingTime: timeOfDaySchema.optional(),
+    closingTime: timeOfDaySchema.optional(),
+    isClosed: z.boolean().default(false),
+  })
+  .strict()
+  .superRefine((hours, context) => {
+    if (hours.isClosed) return;
+    if (!hours.openingTime) {
+      context.addIssue({
+        code: "custom",
+        path: ["openingTime"],
+        message: "Opening time is required for an open day",
+      });
+    }
+    if (!hours.closingTime) {
+      context.addIssue({
+        code: "custom",
+        path: ["closingTime"],
+        message: "Closing time is required for an open day",
+      });
+    }
+    if (
+      hours.openingTime &&
+      hours.closingTime &&
+      hours.openingTime >= hours.closingTime
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["closingTime"],
+        message: "Closing time must be after opening time",
+      });
+    }
+  });
+
 export const createBusinessSchema = z
   .object({
     name: z.string().trim().min(1).max(200),
@@ -22,6 +59,10 @@ export const createBusinessSchema = z
     taxNumber: z.string().trim().max(100).optional(),
     email: emailSchema.optional(),
     phone: phoneSchema.optional(),
+    onboardingServices: z
+      .array(z.string().trim().min(1).max(100))
+      .max(30)
+      .optional(),
     website: z.string().trim().url().max(2048).optional(),
   })
   .strict();
@@ -77,18 +118,22 @@ export const updateBranchSchema = createBranchSchema
 export const businessHoursSchema = z
   .object({
     hours: z
-      .array(
-        z
-          .object({
-            dayOfWeek: z.number().int().min(0).max(6),
-            openingTime: timeOfDaySchema.optional(),
-            closingTime: timeOfDaySchema.optional(),
-            isClosed: z.boolean().default(false),
-          })
-          .strict(),
-      )
+      .array(businessHourSchema)
       .min(1)
-      .max(7),
+      .max(7)
+      .superRefine((hours, context) => {
+        const days = new Set<number>();
+        hours.forEach((entry, index) => {
+          if (days.has(entry.dayOfWeek)) {
+            context.addIssue({
+              code: "custom",
+              path: [index, "dayOfWeek"],
+              message: "Each day can only be configured once",
+            });
+          }
+          days.add(entry.dayOfWeek);
+        });
+      }),
   })
   .strict();
 

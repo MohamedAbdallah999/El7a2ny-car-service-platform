@@ -5,6 +5,7 @@ export {
   AuthHeading,
   AuthProgress,
   AuthTabs,
+  BusinessAuthBrandPanel,
 } from "./AuthExperience.js";
 export { Container, Divider, PageHeader, SectionLabel } from "./Layout.js";
 export type {

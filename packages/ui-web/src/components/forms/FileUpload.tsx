@@ -8,6 +8,8 @@ export interface FileUploadProps extends Omit<
 > {
   label?: ReactNode;
   description?: ReactNode;
+  onRemove?: () => void;
+  removeLabel?: string;
 }
 
 export const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
@@ -17,6 +19,8 @@ export const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
       description = "Click to upload · PNG, JPG, PDF",
       id,
       label = "Upload file",
+      onRemove,
+      removeLabel = "Remove file",
       ...props
     },
     ref,
@@ -25,18 +29,30 @@ export const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
     const inputId = id ?? generatedId;
 
     return (
-      <label
-        htmlFor={inputId}
-        className={classNames(
-          "ui-file-upload",
-          props.disabled && "ui-file-upload--disabled",
-          className,
-        )}
-      >
-        <input {...props} ref={ref} id={inputId} type="file" />
-        <strong>{label}</strong>
-        <span>{description}</span>
-      </label>
+      <div className="ui-file-upload-control">
+        <label
+          htmlFor={inputId}
+          className={classNames(
+            "ui-file-upload",
+            props.disabled && "ui-file-upload--disabled",
+            className,
+          )}
+        >
+          <input {...props} ref={ref} id={inputId} type="file" />
+          <strong>{label}</strong>
+          <span>{description}</span>
+        </label>
+        {onRemove && !props.disabled ? (
+          <button
+            className="ui-file-upload__remove"
+            type="button"
+            onClick={onRemove}
+            aria-label={removeLabel}
+          >
+            Remove
+          </button>
+        ) : null}
+      </div>
     );
   },
 );

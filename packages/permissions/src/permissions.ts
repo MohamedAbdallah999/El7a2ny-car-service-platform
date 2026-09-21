@@ -7,7 +7,6 @@ import type { UserRole } from "@car-platform/constants";
 // up front rather than piecemeal per module.
 export type PermissionResource =
   | "profile"
-  | "adminInvitations"
   | "businesses"
   | "branches"
   | "vehicles"
@@ -39,7 +38,7 @@ const permissionsFor = (
   actions.map((action) => `${resource}:${action}` as Permission);
 
 // SUPER_ADMIN is intentionally "*" rather than an enumerated list: platform
-// administration (invitations, verification review, platform settings,
+// administration (verification review, platform settings,
 // dispute/financial oversight) touches every resource, and enumerating it
 // would just re-derive "everything".
 export const ROLE_PERMISSIONS: Record<UserRole, Permission[] | "*"> = {

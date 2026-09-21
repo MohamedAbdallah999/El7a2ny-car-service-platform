@@ -2,8 +2,6 @@ import type { Request, Response } from "express";
 import { AppError } from "../../errors/app-error.js";
 import { authService } from "./auth.service.js";
 import type {
-  AdminInvitationInput,
-  AdminRegistrationInput,
   ForgotPasswordInput,
   LoginInput,
   LoginVerificationInput,
@@ -35,7 +33,7 @@ export const registerAdmin = async (
   res: Response,
 ): Promise<void> => {
   const result = await authService.startAdminRegistration(
-    req.body as AdminRegistrationInput,
+    req.body as RegisterInput,
   );
   res.status(202).json(result);
 };
@@ -63,22 +61,6 @@ export const verifyLogin = async (
     req.body as LoginVerificationInput,
   );
   res.status(200).json(result);
-};
-
-export const createAdminInvitation = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
-  const userId = req.user?.id;
-  if (!userId) {
-    throw new AppError(401, "Unauthorized");
-  }
-
-  const result = await authService.createAdminInvitation(
-    userId,
-    req.body as AdminInvitationInput,
-  );
-  res.status(201).json(result);
 };
 
 export const forgotPassword = async (

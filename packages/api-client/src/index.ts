@@ -4,6 +4,7 @@ export * from "./auth-api.js";
 export * from "./businesses-api.js";
 export * from "./vehicles-api.js";
 export * from "./services-api.js";
+export * from "./uploads-api.js";
 export * from "./bookings-api.js";
 export * from "./service-requests-api.js";
 export * from "./catalog-api.js";
