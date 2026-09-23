@@ -49,3 +49,26 @@ export const validateQuery = (
     next();
   };
 };
+
+export const validateParams = (
+  schema: ZodType,
+  errorMessage: string,
+  includeDetails = false,
+) => {
+  return (request: Request, response: Response, next: NextFunction): void => {
+    const parsed = schema.safeParse(request.params);
+
+    if (!parsed.success) {
+      response.status(400).json({
+        error: errorMessage,
+        ...(includeDetails
+          ? { details: parsed.error.flatten().fieldErrors }
+          : {}),
+      });
+      return;
+    }
+
+    request.params = parsed.data as Record<string, string>;
+    next();
+  };
+};

@@ -6,6 +6,8 @@ import type {
   BookingListQueryInput,
   BookingStatusUpdateInput,
   CreateBookingInput,
+  CreateBusinessBookingInput,
+  RescheduleBookingInput,
 } from "./booking.validation.js";
 
 const requireRole = (req: Request) => {
@@ -20,6 +22,14 @@ export const createBooking = async (req: Request, res: Response) => {
   const booking = await bookingService.create(
     requireUserId(req),
     req.body as CreateBookingInput,
+  );
+  res.status(201).json({ booking });
+};
+export const createBusinessBooking = async (req: Request, res: Response) => {
+  const input = req.body as CreateBusinessBookingInput;
+  const booking = await bookingService.createForBusiness(
+    requireUserId(req),
+    input,
   );
   res.status(201).json({ booking });
 };
@@ -45,6 +55,15 @@ export const getBooking = async (req: Request, res: Response) => {
     requireUserId(req),
     requireRole(req),
     requireParam(req, "bookingId"),
+  );
+  res.status(200).json({ booking });
+};
+
+export const rescheduleBooking = async (req: Request, res: Response) => {
+  const booking = await bookingService.reschedule(
+    requireUserId(req),
+    requireParam(req, "bookingId"),
+    req.body as RescheduleBookingInput,
   );
   res.status(200).json({ booking });
 };

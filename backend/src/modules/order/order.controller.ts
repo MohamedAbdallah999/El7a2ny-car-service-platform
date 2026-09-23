@@ -61,6 +61,14 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
   res.status(200).json({ order });
 };
 
+export const processOrderReturn = async (req: Request, res: Response) => {
+  const order = await orderService.processReturn(
+    requireUserId(req),
+    requireParam(req, "orderId"),
+  );
+  res.status(200).json({ order });
+};
+
 export const createShipment = async (req: Request, res: Response) => {
   const shipment = await orderService.createShipment(
     requireUserId(req),

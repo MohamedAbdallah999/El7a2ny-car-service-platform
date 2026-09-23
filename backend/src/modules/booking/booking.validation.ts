@@ -16,6 +16,17 @@ export const createBookingSchema = z
     customerNotes: z.string().trim().max(2000).optional(),
   })
   .strict();
+export const createBusinessBookingSchema = createBookingSchema
+  .extend({ customerId: uuidSchema })
+  .strict();
+
+export const rescheduleBookingSchema = z
+  .object({
+    serviceId: uuidSchema,
+    scheduledDate: z.coerce.date(),
+    startTime: timeOfDaySchema,
+  })
+  .strict();
 
 export const bookingStatusUpdateSchema = z
   .object({
@@ -31,12 +42,17 @@ export const bookingListQuerySchema = paginationQuerySchema
     status: z.enum(BOOKING_STATUS_VALUES).optional(),
     businessId: uuidSchema.optional(),
     branchId: uuidSchema.optional(),
+    date: z.coerce.date().optional(),
     from: z.coerce.date().optional(),
     to: z.coerce.date().optional(),
   })
   .strict();
 
 export type CreateBookingInput = z.infer<typeof createBookingSchema>;
+export type CreateBusinessBookingInput = z.infer<
+  typeof createBusinessBookingSchema
+>;
+export type RescheduleBookingInput = z.infer<typeof rescheduleBookingSchema>;
 export type BookingStatusUpdateInput = z.infer<
   typeof bookingStatusUpdateSchema
 >;

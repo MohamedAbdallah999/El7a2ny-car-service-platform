@@ -1,4 +1,7 @@
-import { ORDER_STATUS_VALUES, SHIPMENT_STATUS_VALUES } from "@car-platform/constants";
+import {
+  ORDER_STATUS_VALUES,
+  SHIPMENT_STATUS_VALUES,
+} from "@car-platform/constants";
 import { paginationQuerySchema, uuidSchema, z } from "@car-platform/validation";
 
 export const checkoutSchema = z

@@ -871,6 +871,7 @@ model ServiceRequest {
   messages    ServiceRequestMessage[]
   payments    Payment[]
   disputes    Dispute[]
+  booking     Booking?
 
   @@index([customerId])
   @@index([businessId])
@@ -922,6 +923,7 @@ model Booking {
   branchId           String        @map("branch_id") @db.Uuid
   vehicleId          String        @map("vehicle_id") @db.Uuid
   serviceId          String        @map("service_id") @db.Uuid
+  serviceRequestId   String?       @unique @map("service_request_id") @db.Uuid
   scheduledDate      DateTime      @map("scheduled_date") @db.Date
   startTime          DateTime      @map("start_time") @db.Time
   endTime            DateTime      @map("end_time") @db.Time
@@ -946,6 +948,7 @@ model Booking {
   branch               BusinessBranch         @relation(fields: [branchId], references: [id], onDelete: Restrict)
   vehicle              Vehicle                @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
   service              Service                @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  serviceRequest       ServiceRequest?        @relation(fields: [serviceRequestId], references: [id], onDelete: SetNull)
   attachments          BookingAttachment[]
   statusHistory        BookingStatusHistory[]
   payments             Payment[]

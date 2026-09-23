@@ -15,7 +15,7 @@ export const adminTokenStorage: TokenStorage = {
       if (token) localStorage.setItem(STORAGE_KEY, token);
       else localStorage.removeItem(STORAGE_KEY);
     } catch {
-      // A session can still continue in-memory when browser storage is blocked.
+      // session can still continue in-memory when browser storage is blocked.
     }
   },
 };

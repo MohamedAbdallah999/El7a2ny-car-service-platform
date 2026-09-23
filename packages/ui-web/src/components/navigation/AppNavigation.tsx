@@ -48,7 +48,11 @@ function NavigationItemView<Key extends string>({
         className={className}
         href={item.href}
         aria-current={active ? "page" : undefined}
-        onClick={() => onSelect?.(item.key)}
+        onClick={(event) => {
+          if (!onSelect) return;
+          event.preventDefault();
+          onSelect(item.key);
+        }}
       >
         {content}
       </a>

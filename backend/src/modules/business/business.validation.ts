@@ -64,10 +64,22 @@ export const createBusinessSchema = z
       .max(30)
       .optional(),
     website: z.string().trim().url().max(2048).optional(),
+    logoUrl: z.string().trim().url().max(2048).optional(),
+    coverImageUrl: z.string().trim().url().max(2048).optional(),
   })
   .strict();
 
-export const updateBusinessSchema = createBusinessSchema.partial().strict();
+export const updateBusinessSchema = createBusinessSchema
+  .partial()
+  .extend({
+    description: z.string().trim().max(5000).nullable().optional(),
+    email: emailSchema.nullable().optional(),
+    phone: phoneSchema.nullable().optional(),
+    website: z.string().trim().url().max(2048).nullable().optional(),
+    logoUrl: z.string().trim().url().max(2048).nullable().optional(),
+    coverImageUrl: z.string().trim().url().max(2048).nullable().optional(),
+  })
+  .strict();
 
 export const businessListQuerySchema = paginationQuerySchema
   .extend({

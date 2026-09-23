@@ -4,6 +4,7 @@ export interface UploadFilePayload {
   fileName: string;
   mimeType: "image/png" | "image/jpeg" | "application/pdf";
   data: string;
+  purpose?: "VERIFICATION_DOCUMENT" | "BUSINESS_IMAGE" | "PRODUCT_IMAGE";
 }
 
 export const createUploadsApi = (client: ApiClient) => ({

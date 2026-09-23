@@ -8,7 +8,9 @@ import { UserRole } from "../../generated/prisma/client.js";
 import {
   addServiceRequestAttachment,
   addServiceRequestMessage,
+  acceptServiceRequest,
   createServiceRequest,
+  editPendingServiceRequest,
   getServiceRequest,
   listBusinessServiceRequests,
   listMyServiceRequests,
@@ -22,6 +24,7 @@ import {
   createServiceRequestSchema,
   serviceRequestListQuerySchema,
   serviceRequestStatusUpdateSchema,
+  updatePendingServiceRequestSchema,
 } from "./service-request.validation.js";
 
 const router = Router();
@@ -37,24 +40,48 @@ router.post(
   "/",
   authenticate,
   customer,
-  validateBody(createServiceRequestSchema, "Invalid service request data", true),
+  validateBody(
+    createServiceRequestSchema,
+    "Invalid service request data",
+    true,
+  ),
   createServiceRequest,
 );
 router.get(
   "/mine",
   authenticate,
   customer,
-  validateQuery(serviceRequestListQuerySchema, "Invalid query parameters", true),
+  validateQuery(
+    serviceRequestListQuerySchema,
+    "Invalid query parameters",
+    true,
+  ),
   listMyServiceRequests,
 );
 router.get(
   "/business",
   authenticate,
   admin,
-  validateQuery(serviceRequestListQuerySchema, "Invalid query parameters", true),
+  validateQuery(
+    serviceRequestListQuerySchema,
+    "Invalid query parameters",
+    true,
+  ),
   listBusinessServiceRequests,
 );
 router.get("/:requestId", authenticate, anyAuthenticated, getServiceRequest);
+router.patch(
+  "/:requestId",
+  authenticate,
+  admin,
+  validateBody(
+    updatePendingServiceRequestSchema,
+    "Invalid service request update",
+    true,
+  ),
+  editPendingServiceRequest,
+);
+router.post("/:requestId/accept", authenticate, admin, acceptServiceRequest);
 router.patch(
   "/:requestId/status",
   authenticate,

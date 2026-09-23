@@ -8,6 +8,7 @@ import type {
   CreateServiceRequestInput,
   ServiceRequestListQueryInput,
   ServiceRequestStatusUpdateInput,
+  UpdatePendingServiceRequestInput,
 } from "./service-request.validation.js";
 
 const requireRole = (req: Request) => {
@@ -50,6 +51,26 @@ export const getServiceRequest = async (req: Request, res: Response) => {
     requireUserId(req),
     requireRole(req),
     requireParam(req, "requestId"),
+  );
+  res.status(200).json({ request });
+};
+
+export const acceptServiceRequest = async (req: Request, res: Response) => {
+  const request = await serviceRequestService.accept(
+    requireUserId(req),
+    requireParam(req, "requestId"),
+  );
+  res.status(200).json({ request });
+};
+
+export const editPendingServiceRequest = async (
+  req: Request,
+  res: Response,
+) => {
+  const request = await serviceRequestService.editPending(
+    requireUserId(req),
+    requireParam(req, "requestId"),
+    req.body as UpdatePendingServiceRequestInput,
   );
   res.status(200).json({ request });
 };

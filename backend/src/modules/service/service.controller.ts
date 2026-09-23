@@ -39,6 +39,14 @@ export const listServices = async (req: Request, res: Response) => {
   res.status(200).json(result);
 };
 
+export const listBusinessServices = async (req: Request, res: Response) => {
+  const result = await serviceModuleService.listForBusiness(
+    requireUserId(req),
+    req.validatedQuery as unknown as ServiceListQueryInput,
+  );
+  res.status(200).json(result);
+};
+
 export const getService = async (req: Request, res: Response) => {
   const service = await serviceModuleService.getById(
     requireParam(req, "serviceId"),

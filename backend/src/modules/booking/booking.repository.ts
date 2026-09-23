@@ -1,13 +1,11 @@
 import { prisma } from "../../config/database.js";
-import type {
-  BookingStatus,
-  Prisma,
-} from "../../generated/prisma/client.js";
+import type { BookingStatus, Prisma } from "../../generated/prisma/client.js";
 
 export interface BookingListFilters {
   status?: BookingStatus;
   businessId?: string;
   branchId?: string;
+  date?: Date;
   from?: Date;
   to?: Date;
 }
@@ -39,11 +37,20 @@ export const bookingRepository = {
     return existing !== null;
   },
 
+  async requestNumberExists(requestNumber: string): Promise<boolean> {
+    const existing = await prisma.serviceRequest.findUnique({
+      where: { requestNumber },
+      select: { id: true },
+    });
+    return existing !== null;
+  },
+
   async findOverlapping(
     branchId: string,
     scheduledDate: Date,
     startTime: Date,
     endTime: Date,
+    excludeBookingId?: string,
   ) {
     return prisma.booking.findFirst({
       where: {
@@ -52,6 +59,7 @@ export const bookingRepository = {
         status: { notIn: NON_BLOCKING_STATUSES },
         startTime: { lt: endTime },
         endTime: { gt: startTime },
+        ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
       },
     });
   },
@@ -59,6 +67,27 @@ export const bookingRepository = {
   create(data: Prisma.BookingUncheckedCreateInput) {
     return prisma.$transaction(async (tx) => {
       const booking = await tx.booking.create({ data });
+      await tx.bookingStatusHistory.create({
+        data: {
+          bookingId: booking.id,
+          oldStatus: null,
+          newStatus: booking.status,
+          changedByUserId: null,
+        },
+      });
+      return booking;
+    });
+  },
+
+  createPendingRequest(
+    bookingData: Prisma.BookingUncheckedCreateInput,
+    requestData: Prisma.ServiceRequestUncheckedCreateInput,
+  ) {
+    return prisma.$transaction(async (tx) => {
+      const request = await tx.serviceRequest.create({ data: requestData });
+      const booking = await tx.booking.create({
+        data: { ...bookingData, serviceRequestId: request.id },
+      });
       await tx.bookingStatusHistory.create({
         data: {
           bookingId: booking.id,
@@ -80,6 +109,20 @@ export const bookingRepository = {
         branch: true,
         vehicle: { include: { make: true, model: true } },
         service: true,
+        serviceRequest: true,
+      },
+    });
+  },
+
+  reschedule(bookingId: string, data: Prisma.BookingUncheckedUpdateInput) {
+    return prisma.booking.update({
+      where: { id: bookingId },
+      data,
+      include: {
+        customer: { include: { user: true } },
+        branch: true,
+        service: true,
+        vehicle: { include: { make: true, model: true } },
       },
     });
   },
@@ -125,16 +168,25 @@ export const bookingRepository = {
     const where: Prisma.BookingWhereInput = {
       business: { adminId },
       ...(filters.status ? { status: filters.status } : {}),
-      ...(filters.businessId ? { businessId: filters.businessId } : {}),
-      ...(filters.branchId ? { branchId: filters.branchId } : {}),
-      ...(filters.from || filters.to
+      ...(!filters.status
         ? {
-            scheduledDate: {
-              ...(filters.from ? { gte: filters.from } : {}),
-              ...(filters.to ? { lte: filters.to } : {}),
+            status: {
+              in: ["CONFIRMED", "ARRIVED", "IN_PROGRESS", "COMPLETED"],
             },
           }
         : {}),
+      ...(filters.businessId ? { businessId: filters.businessId } : {}),
+      ...(filters.branchId ? { branchId: filters.branchId } : {}),
+      ...(filters.date
+        ? { scheduledDate: filters.date }
+        : filters.from || filters.to
+          ? {
+              scheduledDate: {
+                ...(filters.from ? { gte: filters.from } : {}),
+                ...(filters.to ? { lte: filters.to } : {}),
+              },
+            }
+          : {}),
     };
 
     const [items, total] = await Promise.all([
@@ -143,7 +195,13 @@ export const bookingRepository = {
         skip,
         take,
         orderBy: { scheduledDate: "asc" },
-        include: { customer: { include: { user: true } }, branch: true, service: true, vehicle: true },
+        include: {
+          customer: { include: { user: true } },
+          branch: true,
+          service: true,
+          vehicle: { include: { make: true, model: true } },
+          serviceRequest: true,
+        },
       }),
       prisma.booking.count({ where }),
     ]);
@@ -159,6 +217,10 @@ export const bookingRepository = {
     extra: Prisma.BookingUpdateInput,
   ) {
     return prisma.$transaction(async (tx) => {
+      const existing = await tx.booking.findUniqueOrThrow({
+        where: { id: bookingId },
+        select: { serviceRequestId: true },
+      });
       const booking = await tx.booking.update({
         where: { id: bookingId },
         data: { status: newStatus, ...extra },
@@ -166,6 +228,30 @@ export const bookingRepository = {
       await tx.bookingStatusHistory.create({
         data: { bookingId, oldStatus, newStatus, changedByUserId, reason },
       });
+      if (existing.serviceRequestId) {
+        const linkedStatus =
+          newStatus === "IN_PROGRESS"
+            ? "IN_PROGRESS"
+            : newStatus === "COMPLETED"
+              ? "COMPLETED"
+              : newStatus === "CANCELLED"
+                ? "CANCELLED"
+                : null;
+        if (linkedStatus) {
+          await tx.serviceRequest.update({
+            where: { id: existing.serviceRequestId },
+            data: {
+              status: linkedStatus,
+              ...(linkedStatus === "COMPLETED"
+                ? { completedAt: new Date(), finalPrice: booking.finalPrice }
+                : {}),
+              ...(linkedStatus === "CANCELLED"
+                ? { cancelledAt: new Date() }
+                : {}),
+            },
+          });
+        }
+      }
       return booking;
     });
   },

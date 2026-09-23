@@ -80,6 +80,34 @@ export const serviceRepository = {
     return { items, total };
   },
 
+  async listByAdmin(
+    adminId: string,
+    filters: Omit<ServiceListFilters, "businessId">,
+    skip: number,
+    take: number,
+  ) {
+    const where: Prisma.ServiceWhereInput = {
+      deletedAt: null,
+      business: { adminId, deletedAt: null },
+      ...(filters.branchId ? { branchId: filters.branchId } : {}),
+      ...(filters.categoryId ? { categoryId: filters.categoryId } : {}),
+      ...(filters.search
+        ? { name: { contains: filters.search, mode: "insensitive" } }
+        : {}),
+    };
+    const [items, total] = await Promise.all([
+      prisma.service.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { createdAt: "desc" },
+        include: { category: true, business: true },
+      }),
+      prisma.service.count({ where }),
+    ]);
+    return { items, total };
+  },
+
   findById(id: string) {
     return prisma.service.findFirst({
       where: { id, deletedAt: null },
@@ -109,7 +137,12 @@ export const serviceRepository = {
 
   addCompatibility(
     serviceId: string,
-    data: { makeId?: string; modelId?: string; yearFrom?: number; yearTo?: number },
+    data: {
+      makeId?: string;
+      modelId?: string;
+      yearFrom?: number;
+      yearTo?: number;
+    },
   ) {
     return prisma.serviceVehicleCompatibility.create({
       data: { ...data, serviceId },
@@ -123,7 +156,9 @@ export const serviceRepository = {
   findCompatibilityById(id: string) {
     return prisma.serviceVehicleCompatibility.findUnique({
       where: { id },
-      include: { service: { include: { business: { include: { admin: true } } } } },
+      include: {
+        service: { include: { business: { include: { admin: true } } } },
+      },
     });
   },
 };

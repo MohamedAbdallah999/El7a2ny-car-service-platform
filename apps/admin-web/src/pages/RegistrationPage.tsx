@@ -15,6 +15,7 @@ import { useAdminAuth } from "../auth/useAdminAuth";
 import { authApi, businessesApi, uploadsApi } from "../lib/api";
 import { getErrorMessage } from "../lib/error";
 import { adminTokenStorage } from "../lib/token-storage";
+import { fileToBase64 } from "../lib/files";
 import {
   Arrow,
   BackButton,
@@ -106,14 +107,6 @@ const initialBusinessHours: BusinessHour[] = [
     closingTime: "20:00",
   },
 ];
-
-const fileToBase64 = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error(`Could not read ${file.name}.`));
-    reader.onload = () => resolve(String(reader.result).split(",", 2)[1] ?? "");
-    reader.readAsDataURL(file);
-  });
 
 function UploadField({
   description,

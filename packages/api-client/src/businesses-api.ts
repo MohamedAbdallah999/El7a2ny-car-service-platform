@@ -24,11 +24,15 @@ export interface CreateBusinessPayload {
 
 export interface CreateBranchPayload {
   name: string;
+  description?: string;
   phone?: string;
   email?: string;
   addressLine1: string;
+  addressLine2?: string;
   city: string;
+  state?: string;
   country: string;
+  postalCode?: string;
   isPrimary?: boolean;
 }
 
@@ -49,6 +53,17 @@ export interface CreateBusinessDocumentPayload {
     | "COMMERCIAL_REGISTRATION"
     | "OTHER";
   fileUrl: string;
+}
+
+export interface UpdateBusinessPayload {
+  name?: string;
+  description?: string | null;
+  businessType?: string;
+  email?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  logoUrl?: string | null;
+  coverImageUrl?: string | null;
 }
 
 export const createBusinessesApi = (client: ApiClient) => ({
@@ -72,6 +87,15 @@ export const createBusinessesApi = (client: ApiClient) => ({
       `/businesses/mine${toQueryString(params)}`,
     ),
 
+  getById: (businessId: string) =>
+    client.request<{ business: BusinessSummary }>(`/businesses/${businessId}`),
+
+  update: (businessId: string, payload: UpdateBusinessPayload) =>
+    client.request<{ business: BusinessSummary }>(`/businesses/${businessId}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+
   create: (payload: CreateBusinessPayload) =>
     client.request<{ business: BusinessSummary }>("/businesses", {
       method: "POST",
@@ -82,6 +106,15 @@ export const createBusinessesApi = (client: ApiClient) => ({
     client.request<{ branch: BusinessBranchSummary }>(
       `/businesses/${businessId}/branches`,
       { method: "POST", body: JSON.stringify(payload) },
+    ),
+  updateBranch: (
+    businessId: string,
+    branchId: string,
+    payload: Partial<CreateBranchPayload> & { status?: string },
+  ) =>
+    client.request<{ branch: BusinessBranchSummary }>(
+      `/businesses/${businessId}/branches/${branchId}`,
+      { method: "PATCH", body: JSON.stringify(payload) },
     ),
 
   setBranchHours: (

@@ -1,5 +1,6 @@
 import { AppError } from "../../errors/app-error.js";
 import { prisma } from "../../config/database.js";
+import type { Prisma } from "../../generated/prisma/client.js";
 
 const fullName = (user: { firstName: string; lastName: string }): string =>
   `${user.firstName} ${user.lastName}`.trim();
@@ -12,7 +13,321 @@ const vehicleName = (vehicle: {
 
 const timeLabel = (value: Date): string => value.toISOString().slice(11, 16);
 
+async function getAdminBusinessIds(
+  userId: string,
+  requestedBusinessId?: string,
+): Promise<string[]> {
+  const admin = await prisma.admin.findUnique({
+    where: { userId },
+    select: {
+      businesses: { where: { deletedAt: null }, select: { id: true } },
+    },
+  });
+  if (!admin) {
+    throw new AppError(403, "Only admin accounts can view customers");
+  }
+  const businessIds = admin.businesses.map(({ id }) => id);
+  if (requestedBusinessId) {
+    if (!businessIds.includes(requestedBusinessId)) {
+      throw new AppError(403, "You cannot view customers for this business");
+    }
+    return [requestedBusinessId];
+  }
+  return businessIds;
+}
+
+const customerRelationshipWhere = (
+  businessIds: string[],
+): Prisma.CustomerWhereInput => ({
+  OR: [
+    { bookings: { some: { businessId: { in: businessIds } } } },
+    { serviceRequests: { some: { businessId: { in: businessIds } } } },
+    {
+      orders: {
+        some: { items: { some: { businessId: { in: businessIds } } } },
+      },
+    },
+  ],
+});
+
 export const dashboardService = {
+  async getAdminCustomers(userId: string, businessId?: string) {
+    const businessIds = await getAdminBusinessIds(userId, businessId);
+    if (businessIds.length === 0) return [];
+    const customers = await prisma.customer.findMany({
+      where: customerRelationshipWhere(businessIds),
+      select: {
+        id: true,
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            status: true,
+          },
+        },
+        vehicles: {
+          select: {
+            id: true,
+            year: true,
+            make: { select: { name: true } },
+            model: { select: { name: true } },
+          },
+        },
+        bookings: {
+          where: {
+            businessId: { in: businessIds },
+          },
+          select: { status: true, scheduledDate: true, completedAt: true },
+        },
+        orders: {
+          where: {
+            items: { some: { businessId: { in: businessIds } } },
+          },
+          select: { id: true },
+        },
+      },
+    });
+    return customers.map((customer) => ({
+      id: customer.id,
+      name: fullName(customer.user),
+      email: customer.user.email,
+      phone: customer.user.phone,
+      status: customer.user.status,
+      vehicleCount: customer.vehicles.length,
+      vehicles: customer.vehicles.map((vehicle) => ({
+        id: vehicle.id,
+        label: `${vehicle.make.name} ${vehicle.model.name} ${vehicle.year}`,
+      })),
+      bookingCount: customer.bookings.length,
+      orderCount: customer.orders.length,
+      lastVisit:
+        customer.bookings
+          .filter((booking) => booking.status === "COMPLETED")
+          .reduce<Date | null>(
+            (latest, booking) =>
+              !latest || (booking.completedAt ?? booking.scheduledDate) > latest
+                ? (booking.completedAt ?? booking.scheduledDate)
+                : latest,
+            null,
+          )
+          ?.toISOString() ?? null,
+    }));
+  },
+  async getAdminCustomer(
+    userId: string,
+    customerId: string,
+    businessId?: string,
+  ) {
+    const businessIds = await getAdminBusinessIds(userId, businessId);
+    const customer = await prisma.customer.findFirst({
+      where: {
+        id: customerId,
+        ...customerRelationshipWhere(businessIds),
+      },
+      select: {
+        id: true,
+        createdAt: true,
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            profileImageUrl: true,
+            status: true,
+          },
+        },
+        vehicles: {
+          orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+          select: {
+            id: true,
+            year: true,
+            trim: true,
+            color: true,
+            licensePlate: true,
+            mileage: true,
+            fuelType: true,
+            transmission: true,
+            nickname: true,
+            imageUrl: true,
+            isPrimary: true,
+            make: { select: { name: true } },
+            model: { select: { name: true } },
+          },
+        },
+        bookings: {
+          where: { businessId: { in: businessIds } },
+          orderBy: [{ scheduledDate: "desc" }, { startTime: "desc" }],
+          select: {
+            id: true,
+            bookingNumber: true,
+            scheduledDate: true,
+            startTime: true,
+            endTime: true,
+            status: true,
+            estimatedPrice: true,
+            finalPrice: true,
+            currency: true,
+            customerNotes: true,
+            businessNotes: true,
+            createdAt: true,
+            confirmedAt: true,
+            completedAt: true,
+            cancelledAt: true,
+            cancellationReason: true,
+            business: { select: { id: true, name: true } },
+            branch: {
+              select: { id: true, name: true, addressLine1: true, city: true },
+            },
+            service: {
+              select: { id: true, name: true, durationMinutes: true },
+            },
+            vehicle: {
+              select: {
+                id: true,
+                year: true,
+                make: { select: { name: true } },
+                model: { select: { name: true } },
+              },
+            },
+          },
+        },
+        orders: {
+          where: { items: { some: { businessId: { in: businessIds } } } },
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            orderNumber: true,
+            status: true,
+            currency: true,
+            createdAt: true,
+            updatedAt: true,
+            cancelledAt: true,
+            completedAt: true,
+            items: {
+              where: { businessId: { in: businessIds } },
+              select: {
+                id: true,
+                productId: true,
+                productNameSnapshot: true,
+                skuSnapshot: true,
+                quantity: true,
+                unitPrice: true,
+                discountAmount: true,
+                totalAmount: true,
+                business: { select: { id: true, name: true } },
+              },
+            },
+            payments: {
+              orderBy: { createdAt: "desc" },
+              take: 1,
+              select: { status: true, paidAt: true },
+            },
+            shipments: {
+              orderBy: { createdAt: "desc" },
+              take: 1,
+              select: {
+                status: true,
+                carrier: true,
+                trackingNumber: true,
+                shippedAt: true,
+                deliveredAt: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!customer) {
+      throw new AppError(404, "Customer not found for this business");
+    }
+
+    return {
+      id: customer.id,
+      name: fullName(customer.user),
+      email: customer.user.email,
+      phone: customer.user.phone,
+      profileImageUrl: customer.user.profileImageUrl,
+      status: customer.user.status,
+      customerSince: customer.createdAt.toISOString(),
+      vehicles: customer.vehicles.map((vehicle) => ({
+        id: vehicle.id,
+        make: vehicle.make.name,
+        model: vehicle.model.name,
+        year: vehicle.year,
+        trim: vehicle.trim,
+        color: vehicle.color,
+        licensePlate: vehicle.licensePlate,
+        mileage: vehicle.mileage,
+        fuelType: vehicle.fuelType,
+        transmission: vehicle.transmission,
+        nickname: vehicle.nickname,
+        imageUrl: vehicle.imageUrl,
+        isPrimary: vehicle.isPrimary,
+      })),
+      bookings: customer.bookings.map((booking) => ({
+        id: booking.id,
+        bookingNumber: booking.bookingNumber,
+        scheduledDate: booking.scheduledDate.toISOString(),
+        startTime: timeLabel(booking.startTime),
+        endTime: timeLabel(booking.endTime),
+        status: booking.status,
+        estimatedPrice: booking.estimatedPrice.toString(),
+        finalPrice: booking.finalPrice?.toString() ?? null,
+        currency: booking.currency,
+        customerNotes: booking.customerNotes,
+        businessNotes: booking.businessNotes,
+        createdAt: booking.createdAt.toISOString(),
+        confirmedAt: booking.confirmedAt?.toISOString() ?? null,
+        completedAt: booking.completedAt?.toISOString() ?? null,
+        cancelledAt: booking.cancelledAt?.toISOString() ?? null,
+        cancellationReason: booking.cancellationReason,
+        business: booking.business,
+        branch: booking.branch,
+        service: booking.service,
+        vehicle: {
+          id: booking.vehicle.id,
+          label: vehicleName(booking.vehicle),
+        },
+      })),
+      orders: customer.orders.map((order) => ({
+        id: order.id,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        currency: order.currency,
+        total: order.items
+          .reduce((sum, item) => sum + Number(item.totalAmount), 0)
+          .toFixed(2),
+        createdAt: order.createdAt.toISOString(),
+        updatedAt: order.updatedAt.toISOString(),
+        completedAt: order.completedAt?.toISOString() ?? null,
+        cancelledAt: order.cancelledAt?.toISOString() ?? null,
+        paymentStatus: order.payments[0]?.status ?? "PENDING",
+        paidAt: order.payments[0]?.paidAt?.toISOString() ?? null,
+        shipment: order.shipments[0]
+          ? {
+              ...order.shipments[0],
+              shippedAt: order.shipments[0].shippedAt?.toISOString() ?? null,
+              deliveredAt:
+                order.shipments[0].deliveredAt?.toISOString() ?? null,
+            }
+          : null,
+        items: order.items.map((item) => ({
+          id: item.id,
+          productId: item.productId,
+          productName: item.productNameSnapshot,
+          sku: item.skuSnapshot,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice.toString(),
+          discountAmount: item.discountAmount.toString(),
+          totalAmount: item.totalAmount.toString(),
+          business: item.business,
+        })),
+      })),
+    };
+  },
   async getAdminOverview(userId: string) {
     const admin = await prisma.admin.findUnique({
       where: { userId },
@@ -41,12 +356,16 @@ export const dashboardService = {
     dayStart.setHours(0, 0, 0, 0);
     const dayEnd = new Date(dayStart);
     dayEnd.setDate(dayEnd.getDate() + 1);
+    const scheduledToday = new Date(
+      Date.UTC(dayStart.getFullYear(), dayStart.getMonth(), dayStart.getDate()),
+    );
 
     if (businessIds.length === 0) {
       return {
         business: null,
         stats: {
           todayBookings: 0,
+          inProgressBookings: 0,
           completedToday: 0,
           todayOrders: 0,
           pendingRequests: 0,
@@ -63,10 +382,11 @@ export const dashboardService = {
       };
     }
 
-    const bookingTodayWhere = {
+    const bookingTodayWhere: Prisma.BookingWhereInput = {
       businessId: { in: businessIds },
-      scheduledDate: { gte: dayStart, lt: dayEnd },
-    } as const;
+      scheduledDate: scheduledToday,
+      status: { in: ["CONFIRMED", "ARRIVED", "IN_PROGRESS", "COMPLETED"] },
+    };
 
     const [
       schedule,
@@ -74,11 +394,14 @@ export const dashboardService = {
       orderItems,
       inventoryAlerts,
       todayBookings,
-      completedToday,
+      inProgressBookings,
+      completedRequestsToday,
+      completedBookingsToday,
       todayOrders,
       activeServices,
       pendingRequestCount,
       bookingRevenue,
+      requestRevenue,
       orderRevenue,
       bookingCustomers,
       requestCustomers,
@@ -129,7 +452,26 @@ export const dashboardService = {
       }),
       prisma.booking.count({ where: bookingTodayWhere }),
       prisma.booking.count({
-        where: { ...bookingTodayWhere, status: "COMPLETED" },
+        where: {
+          businessId: { in: businessIds },
+          scheduledDate: scheduledToday,
+          status: "IN_PROGRESS",
+        },
+      }),
+      prisma.serviceRequest.count({
+        where: {
+          businessId: { in: businessIds },
+          status: "COMPLETED",
+          completedAt: { gte: dayStart, lt: dayEnd },
+          booking: { is: null },
+        },
+      }),
+      prisma.booking.count({
+        where: {
+          businessId: { in: businessIds },
+          status: "COMPLETED",
+          completedAt: { gte: dayStart, lt: dayEnd },
+        },
       }),
       prisma.order.count({
         where: {
@@ -137,22 +479,39 @@ export const dashboardService = {
           items: { some: { businessId: { in: businessIds } } },
         },
       }),
-      prisma.booking.count({
-        where: { ...bookingTodayWhere, status: "IN_PROGRESS" },
+      prisma.service.count({
+        where: {
+          businessId: { in: businessIds },
+          isActive: true,
+          deletedAt: null,
+        },
       }),
       prisma.serviceRequest.count({
         where: { businessId: { in: businessIds }, status: "PENDING" },
       }),
       prisma.booking.aggregate({
-        where: { ...bookingTodayWhere, status: "COMPLETED" },
+        where: {
+          businessId: { in: businessIds },
+          status: "COMPLETED",
+          completedAt: { gte: dayStart, lt: dayEnd },
+        },
+        _sum: { finalPrice: true },
+      }),
+      prisma.serviceRequest.aggregate({
+        where: {
+          businessId: { in: businessIds },
+          status: "COMPLETED",
+          completedAt: { gte: dayStart, lt: dayEnd },
+          booking: { is: null },
+        },
         _sum: { finalPrice: true },
       }),
       prisma.orderItem.aggregate({
         where: {
           businessId: { in: businessIds },
           order: {
-            createdAt: { gte: dayStart, lt: dayEnd },
-            status: { notIn: ["CANCELLED", "REFUNDED"] },
+            status: "COMPLETED",
+            completedAt: { gte: dayStart, lt: dayEnd },
           },
         },
         _sum: { totalAmount: true },
@@ -202,12 +561,14 @@ export const dashboardService = {
         : null,
       stats: {
         todayBookings,
-        completedToday,
+        inProgressBookings,
+        completedToday: completedBookingsToday + completedRequestsToday,
         todayOrders,
         pendingRequests: pendingRequestCount,
         activeServices,
         todayRevenue: (
           Number(bookingRevenue._sum.finalPrice ?? 0) +
+          Number(requestRevenue._sum.finalPrice ?? 0) +
           Number(orderRevenue._sum.totalAmount ?? 0)
         ).toFixed(2),
         currency: "EGP",

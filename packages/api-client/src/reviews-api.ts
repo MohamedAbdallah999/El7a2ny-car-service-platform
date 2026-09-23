@@ -23,7 +23,10 @@ export interface CreateBusinessReviewPayload {
 }
 
 export const createReviewsApi = (client: ApiClient) => ({
-  listForBusiness: (businessId: string, params: { page?: number; limit?: number } = {}) =>
+  listForBusiness: (
+    businessId: string,
+    params: { page?: number; limit?: number } = {},
+  ) =>
     client.request<PaginatedResult<BusinessReview>>(
       `/reviews/business${toQueryString({ businessId, ...params })}`,
     ),

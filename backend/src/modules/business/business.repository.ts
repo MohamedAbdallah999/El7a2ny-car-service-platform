@@ -48,7 +48,7 @@ export const businessRepository = {
   findById(id: string) {
     return prisma.business.findFirst({
       where: { id, deletedAt: null },
-      include: { admin: true, branches: true },
+      include: { admin: true, branches: { include: { hours: true } } },
     });
   },
 
@@ -59,11 +59,7 @@ export const businessRepository = {
     });
   },
 
-  async listPublic(
-    filters: BusinessListFilters,
-    skip: number,
-    take: number,
-  ) {
+  async listPublic(filters: BusinessListFilters, skip: number, take: number) {
     const where: Prisma.BusinessWhereInput = {
       deletedAt: null,
       status: "ACTIVE",
@@ -72,7 +68,11 @@ export const businessRepository = {
         ? { name: { contains: filters.search, mode: "insensitive" } }
         : {}),
       ...(filters.city
-        ? { branches: { some: { city: { equals: filters.city, mode: "insensitive" } } } }
+        ? {
+            branches: {
+              some: { city: { equals: filters.city, mode: "insensitive" } },
+            },
+          }
         : {}),
     };
 
@@ -93,7 +93,12 @@ export const businessRepository = {
   async listForAdmin(adminId: string, skip: number, take: number) {
     const where: Prisma.BusinessWhereInput = { adminId, deletedAt: null };
     const [items, total] = await Promise.all([
-      prisma.business.findMany({ where, skip, take, orderBy: { createdAt: "desc" } }),
+      prisma.business.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { createdAt: "desc" },
+      }),
       prisma.business.count({ where }),
     ]);
     return { items, total };
@@ -132,10 +137,7 @@ export const businessRepository = {
     return prisma.business.update({ where: { id }, data });
   },
 
-  updateVerification(
-    id: string,
-    status: VerificationStatus,
-  ) {
+  updateVerification(id: string, status: VerificationStatus) {
     return prisma.business.update({
       where: { id },
       data: { verificationStatus: status },
@@ -163,7 +165,7 @@ export const businessRepository = {
 
   listBranches(businessId: string) {
     return prisma.businessBranch.findMany({
-      where: { businessId },
+      where: { businessId, status: "ACTIVE" },
       orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
       include: { hours: true },
     });
@@ -172,7 +174,11 @@ export const businessRepository = {
   findBranchById(id: string) {
     return prisma.businessBranch.findUnique({
       where: { id },
-      include: { business: { include: { admin: true } }, hours: true, holidays: true },
+      include: {
+        business: { include: { admin: true } },
+        hours: true,
+        holidays: true,
+      },
     });
   },
 
@@ -201,12 +207,19 @@ export const businessRepository = {
 
   setHours(
     branchId: string,
-    hours: { dayOfWeek: number; openingTime: Date | null; closingTime: Date | null; isClosed: boolean }[],
+    hours: {
+      dayOfWeek: number;
+      openingTime: Date | null;
+      closingTime: Date | null;
+      isClosed: boolean;
+    }[],
   ) {
     return prisma.$transaction(
       hours.map((hour) =>
         prisma.businessHour.upsert({
-          where: { branchId_dayOfWeek: { branchId, dayOfWeek: hour.dayOfWeek } },
+          where: {
+            branchId_dayOfWeek: { branchId, dayOfWeek: hour.dayOfWeek },
+          },
           create: { branchId, ...hour },
           update: hour,
         }),
@@ -228,7 +241,9 @@ export const businessRepository = {
   findHolidayById(id: string) {
     return prisma.businessHoliday.findUnique({
       where: { id },
-      include: { branch: { include: { business: { include: { admin: true } } } } },
+      include: {
+        branch: { include: { business: { include: { admin: true } } } },
+      },
     });
   },
 
@@ -271,7 +286,12 @@ export const businessRepository = {
   ) {
     return prisma.businessVerificationDocument.update({
       where: { id },
-      data: { status, reviewedByUserId, reviewedAt: new Date(), rejectionReason },
+      data: {
+        status,
+        reviewedByUserId,
+        reviewedAt: new Date(),
+        rejectionReason,
+      },
     });
   },
 };

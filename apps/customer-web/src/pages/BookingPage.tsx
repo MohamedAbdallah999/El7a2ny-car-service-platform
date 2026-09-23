@@ -212,11 +212,14 @@ export function BookingPage() {
         <div className="booking-confirmation__check" aria-hidden="true">
           ✓
         </div>
-        <h1>Booking Confirmed!</h1>
-        <p>Your appointment has been booked. The shop will confirm shortly.</p>
+        <h1>Booking Request Submitted!</h1>
+        <p>
+          Your requested appointment was saved. It will become confirmed after
+          the shop accepts it.
+        </p>
         <dl>
           <div className="booking-confirmation__reference">
-            <dt>Booking Reference</dt>
+            <dt>Request Reference</dt>
             <dd>{confirmedBooking.bookingNumber}</dd>
           </div>
           <div>

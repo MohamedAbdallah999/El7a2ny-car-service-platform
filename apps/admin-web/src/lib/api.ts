@@ -3,7 +3,11 @@ import {
   createAuthApi,
   createBusinessesApi,
   createDashboardApi,
+  createBookingsApi,
+  createCatalogApi,
+  createOrdersApi,
   createServiceRequestsApi,
+  createServicesApi,
   createUploadsApi,
 } from "@car-platform/api-client";
 import { adminTokenStorage } from "./token-storage";
@@ -19,5 +23,9 @@ export const apiClient = createApiClient({
 export const authApi = createAuthApi(apiClient);
 export const businessesApi = createBusinessesApi(apiClient);
 export const dashboardApi = createDashboardApi(apiClient);
+export const bookingsApi = createBookingsApi(apiClient);
+export const catalogApi = createCatalogApi(apiClient);
+export const ordersApi = createOrdersApi(apiClient);
 export const serviceRequestsApi = createServiceRequestsApi(apiClient);
+export const servicesApi = createServicesApi(apiClient);
 export const uploadsApi = createUploadsApi(apiClient);

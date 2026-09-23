@@ -42,6 +42,7 @@ export const serviceRequestRepository = {
         business: { include: { admin: true } },
         vehicle: { include: { make: true, model: true } },
         service: true,
+        booking: true,
       },
     });
   },
@@ -88,8 +89,9 @@ export const serviceRequestRepository = {
         orderBy: { createdAt: "desc" },
         include: {
           customer: { include: { user: true } },
-          vehicle: true,
+          vehicle: { include: { make: true, model: true } },
           service: true,
+          booking: true,
         },
       }),
       prisma.serviceRequest.count({ where }),
@@ -101,7 +103,84 @@ export const serviceRequestRepository = {
     return prisma.serviceRequest.update({ where: { id }, data });
   },
 
-  createMessage(serviceRequestId: string, senderUserId: string, message: string) {
+  async acceptPending(
+    requestId: string,
+    bookingId: string,
+    changedByUserId: string,
+  ) {
+    return prisma.$transaction(async (tx) => {
+      const updated = await tx.serviceRequest.updateMany({
+        where: { id: requestId, status: "PENDING" },
+        data: { status: "APPROVED" },
+      });
+      if (updated.count !== 1) throw new Error("REQUEST_NOT_PENDING");
+
+      const booking = await tx.booking.findUniqueOrThrow({
+        where: { id: bookingId },
+      });
+      if (booking.status !== "PENDING") throw new Error("BOOKING_NOT_PENDING");
+      await tx.booking.update({
+        where: { id: bookingId },
+        data: { status: "CONFIRMED", confirmedAt: new Date() },
+      });
+      await tx.bookingStatusHistory.create({
+        data: {
+          bookingId,
+          oldStatus: booking.status,
+          newStatus: "CONFIRMED",
+          changedByUserId,
+        },
+      });
+      return tx.serviceRequest.findUniqueOrThrow({
+        where: { id: requestId },
+        include: { booking: true, service: true },
+      });
+    });
+  },
+
+  async rejectPending(
+    requestId: string,
+    bookingId: string | undefined,
+    changedByUserId: string,
+  ) {
+    return prisma.$transaction(async (tx) => {
+      const updated = await tx.serviceRequest.updateMany({
+        where: { id: requestId, status: "PENDING" },
+        data: { status: "REJECTED", cancelledAt: new Date() },
+      });
+      if (updated.count !== 1) throw new Error("REQUEST_NOT_PENDING");
+
+      if (bookingId) {
+        const booking = await tx.booking.findUniqueOrThrow({
+          where: { id: bookingId },
+        });
+        if (booking.status === "PENDING") {
+          await tx.booking.update({
+            where: { id: bookingId },
+            data: { status: "REJECTED", cancelledAt: new Date() },
+          });
+          await tx.bookingStatusHistory.create({
+            data: {
+              bookingId,
+              oldStatus: booking.status,
+              newStatus: "REJECTED",
+              changedByUserId,
+            },
+          });
+        }
+      }
+      return tx.serviceRequest.findUniqueOrThrow({
+        where: { id: requestId },
+        include: { booking: true, service: true },
+      });
+    });
+  },
+
+  createMessage(
+    serviceRequestId: string,
+    senderUserId: string,
+    message: string,
+  ) {
     return prisma.serviceRequestMessage.create({
       data: { serviceRequestId, senderUserId, message },
     });

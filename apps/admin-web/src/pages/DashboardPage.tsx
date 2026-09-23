@@ -22,25 +22,12 @@ import { useNavigate } from "react-router-dom";
 import { useAdminAuth } from "../auth/useAdminAuth";
 import { dashboardApi, serviceRequestsApi } from "../lib/api";
 import { getErrorMessage } from "../lib/error";
+import {
+  adminNavigationItems,
+  getAdminNavigationPath,
+} from "./components/adminNavigation";
 
-const navItems = [
-  ["dashboard", "Dashboard", "▦", "#dashboard"],
-  ["business", "My Business", "▣", "#business"],
-  ["bookings", "Bookings", "◷", "#schedule"],
-  ["requests", "Service Requests", "◇", "#requests"],
-  ["services", "Services", "○", "#schedule"],
-  ["products", "Products", "□", "#orders"],
-  ["inventory", "Inventory", "▤", "#inventory"],
-  ["orders", "Orders", "▱", "#orders"],
-  ["customers", "Customers", "♙", "#customers"],
-  ["reviews", "Reviews", "☆", "#reviews"],
-  ["revenue", "Revenue", "⌁", "#revenue"],
-  ["reports", "Reports", "▥", "#dashboard"],
-  ["promotions", "Promotions", "%", "#dashboard"],
-  ["settings", "Settings", "⚙", "#business"],
-] as const;
-
-const shortNavItems = navItems.slice(0, 5);
+const shortNavItems = adminNavigationItems.slice(0, 5);
 
 const formatDate = (value: Date): string =>
   new Intl.DateTimeFormat("en-GB", {
@@ -110,7 +97,6 @@ export function DashboardPage() {
       setIsLoading(false);
     }
   }, []);
-
   useEffect(() => {
     let isCurrent = true;
 
@@ -135,7 +121,7 @@ export function DashboardPage() {
 
   const navigation = useMemo(
     () =>
-      navItems.map(([key, label, icon, href]) => ({
+      adminNavigationItems.map(([key, label, icon, href]) => ({
         key,
         label,
         href,
@@ -166,14 +152,25 @@ export function DashboardPage() {
     navigate("/sign-in", { replace: true });
   }
 
-  async function updateRequest(requestId: string, status: string) {
+  async function updateRequest(requestId: string, action: "accept" | "reject") {
     setUpdatingRequestId(requestId);
     setError(null);
     try {
-      await serviceRequestsApi.updateStatus(requestId, status);
+      if (action === "accept") {
+        await serviceRequestsApi.accept(requestId);
+      } else {
+        await serviceRequestsApi.updateStatus(requestId, "REJECTED");
+      }
       await loadDashboard();
     } catch (caught) {
-      setError(getErrorMessage(caught, "Could not update the request."));
+      setError(
+        getErrorMessage(
+          caught,
+          action === "accept"
+            ? "Could not accept the request."
+            : "Could not reject the request.",
+        ),
+      );
     } finally {
       setUpdatingRequestId(null);
     }
@@ -184,6 +181,7 @@ export function DashboardPage() {
     const rows = [
       ["Metric", "Value"],
       ["Today's bookings", dashboard.stats.todayBookings],
+      ["Bookings in progress", dashboard.stats.inProgressBookings],
       ["Completed today", dashboard.stats.completedToday],
       ["Pending requests", dashboard.stats.pendingRequests],
       ["Active services", dashboard.stats.activeServices],
@@ -294,6 +292,7 @@ export function DashboardPage() {
       className="ui-sidebar--admin"
       items={navigation}
       activeKey="dashboard"
+      onSelect={(key) => navigate(getAdminNavigationPath(key))}
       header={
         <div className="ui-admin-sidebar__header">
           <div className="ui-admin-sidebar__brand">
@@ -348,7 +347,11 @@ export function DashboardPage() {
         </div>
       }
       mobileNavigation={
-        <MobileBottomNav items={mobileNavigation} activeKey="dashboard" />
+        <MobileBottomNav
+          items={mobileNavigation}
+          activeKey="dashboard"
+          onSelect={(key) => navigate(getAdminNavigationPath(key))}
+        />
       }
     >
       <div className="ui-admin-home" id="dashboard">
@@ -360,14 +363,7 @@ export function DashboardPage() {
               <Button variant="outline" size="sm" onClick={downloadReport}>
                 Download Report
               </Button>
-              <Button
-                size="sm"
-                onClick={() =>
-                  document
-                    .getElementById("schedule")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-              >
+              <Button size="sm" onClick={() => navigate("/bookings?new=1")}>
                 + New Booking
               </Button>
             </div>
@@ -397,7 +393,7 @@ export function DashboardPage() {
               <Stat
                 value={dashboard.stats.todayBookings}
                 label="Today's Bookings"
-                detail={`${dashboard.stats.activeServices} in progress`}
+                detail={`${dashboard.stats.inProgressBookings} in progress`}
               />
               <Stat
                 className="ui-admin-home__urgent-stat"
@@ -408,7 +404,7 @@ export function DashboardPage() {
               <Stat
                 value={dashboard.stats.activeServices}
                 label="Active Services"
-                detail="On the floor now"
+                detail="Available to customers"
               />
               <Stat
                 id="revenue"
@@ -497,8 +493,9 @@ export function DashboardPage() {
                             variant="outline"
                             size="xs"
                             loading={updatingRequestId === request.id}
+                            disabled={updatingRequestId !== null}
                             onClick={() =>
-                              void updateRequest(request.id, "REJECTED")
+                              void updateRequest(request.id, "reject")
                             }
                           >
                             Reject
@@ -506,8 +503,9 @@ export function DashboardPage() {
                           <Button
                             size="xs"
                             loading={updatingRequestId === request.id}
+                            disabled={updatingRequestId !== null}
                             onClick={() =>
-                              void updateRequest(request.id, "REVIEWING")
+                              void updateRequest(request.id, "accept")
                             }
                           >
                             Accept

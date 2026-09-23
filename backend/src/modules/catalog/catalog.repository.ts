@@ -72,8 +72,32 @@ export const catalogRepository = {
     return existing !== null;
   },
 
-  create(data: Prisma.ProductUncheckedCreateInput) {
-    return prisma.product.create({ data });
+  create(
+    data: Prisma.ProductUncheckedCreateInput,
+    inventory?: {
+      branchId: string;
+      quantity: number;
+      lowStockThreshold: number;
+      reorderQuantity: number;
+    },
+  ) {
+    return prisma.$transaction(async (tx) => {
+      const product = await tx.product.create({ data });
+      if (inventory) {
+        await tx.inventory.create({
+          data: {
+            businessId: product.businessId,
+            branchId: inventory.branchId,
+            productId: product.id,
+            quantity: inventory.quantity,
+            availableQuantity: inventory.quantity,
+            lowStockThreshold: inventory.lowStockThreshold,
+            reorderQuantity: inventory.reorderQuantity,
+          },
+        });
+      }
+      return product;
+    });
   },
 
   findById(id: string) {
@@ -107,7 +131,9 @@ export const catalogRepository = {
       business: { status: "ACTIVE", deletedAt: null },
       ...(filters.businessId ? { businessId: filters.businessId } : {}),
       ...(filters.categoryId ? { categoryId: filters.categoryId } : {}),
-      ...(filters.brand ? { brand: { equals: filters.brand, mode: "insensitive" } } : {}),
+      ...(filters.brand
+        ? { brand: { equals: filters.brand, mode: "insensitive" } }
+        : {}),
       ...(filters.search
         ? { name: { contains: filters.search, mode: "insensitive" } }
         : {}),
@@ -119,7 +145,43 @@ export const catalogRepository = {
         skip,
         take,
         orderBy: { createdAt: "desc" },
-        include: { category: true, images: { where: { isPrimary: true }, take: 1 } },
+        include: {
+          category: true,
+          images: { where: { isPrimary: true }, take: 1 },
+        },
+      }),
+      prisma.product.count({ where }),
+    ]);
+    return { items, total };
+  },
+
+  async listByAdmin(
+    adminId: string,
+    filters: Omit<ProductListFilters, "businessId">,
+    skip: number,
+    take: number,
+  ) {
+    const where: Prisma.ProductWhereInput = {
+      deletedAt: null,
+      business: { adminId, deletedAt: null },
+      ...(filters.categoryId ? { categoryId: filters.categoryId } : {}),
+      ...(filters.brand
+        ? { brand: { equals: filters.brand, mode: "insensitive" } }
+        : {}),
+      ...(filters.search
+        ? { name: { contains: filters.search, mode: "insensitive" } }
+        : {}),
+    };
+    const [items, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { createdAt: "desc" },
+        include: {
+          category: true,
+          images: { orderBy: { sortOrder: "asc" }, take: 1 },
+        },
       }),
       prisma.product.count({ where }),
     ]);
@@ -141,7 +203,15 @@ export const catalogRepository = {
     productId: string,
     data: Omit<Prisma.ProductImageUncheckedCreateInput, "productId">,
   ) {
-    return prisma.productImage.create({ data: { ...data, productId } });
+    return prisma.$transaction(async (tx) => {
+      if (data.isPrimary) {
+        await tx.productImage.updateMany({
+          where: { productId },
+          data: { isPrimary: false },
+        });
+      }
+      return tx.productImage.create({ data: { ...data, productId } });
+    });
   },
 
   removeImage(id: string) {
@@ -151,15 +221,22 @@ export const catalogRepository = {
   findImageById(id: string) {
     return prisma.productImage.findUnique({
       where: { id },
-      include: { product: { include: { business: { include: { admin: true } } } } },
+      include: {
+        product: { include: { business: { include: { admin: true } } } },
+      },
     });
   },
 
   addCompatibility(
     productId: string,
-    data: Omit<Prisma.ProductVehicleCompatibilityUncheckedCreateInput, "productId">,
+    data: Omit<
+      Prisma.ProductVehicleCompatibilityUncheckedCreateInput,
+      "productId"
+    >,
   ) {
-    return prisma.productVehicleCompatibility.create({ data: { ...data, productId } });
+    return prisma.productVehicleCompatibility.create({
+      data: { ...data, productId },
+    });
   },
 
   removeCompatibility(id: string) {
@@ -169,7 +246,9 @@ export const catalogRepository = {
   findCompatibilityById(id: string) {
     return prisma.productVehicleCompatibility.findUnique({
       where: { id },
-      include: { product: { include: { business: { include: { admin: true } } } } },
+      include: {
+        product: { include: { business: { include: { admin: true } } } },
+      },
     });
   },
 
@@ -189,11 +268,20 @@ export const catalogRepository = {
   findInventoryById(id: string) {
     return prisma.inventory.findUnique({
       where: { id },
-      include: { business: { include: { admin: true } }, product: true, branch: true },
+      include: {
+        business: { include: { admin: true } },
+        product: true,
+        branch: true,
+      },
     });
   },
 
-  listInventory(businessId: string, branchId: string | undefined, skip: number, take: number) {
+  listInventory(
+    businessId: string,
+    branchId: string | undefined,
+    skip: number,
+    take: number,
+  ) {
     const where: Prisma.InventoryWhereInput = {
       businessId,
       ...(branchId ? { branchId } : {}),
@@ -204,7 +292,7 @@ export const catalogRepository = {
         skip,
         take,
         orderBy: { updatedAt: "desc" },
-        include: { product: true, branch: true },
+        include: { product: { include: { category: true } }, branch: true },
       }),
       prisma.inventory.count({ where }),
     ]);
@@ -223,17 +311,23 @@ export const catalogRepository = {
         where: { id: inventoryId },
       });
       const newQuantity = inventory.quantity + delta;
-      if (newQuantity < 0) {
+      const newAvailableQuantity = inventory.availableQuantity + delta;
+      if (newQuantity < 0 || newAvailableQuantity < 0) {
         throw new Error("INSUFFICIENT_STOCK");
       }
 
-      const updated = await tx.inventory.update({
-        where: { id: inventoryId },
+      const changed = await tx.inventory.updateMany({
+        where: {
+          id: inventoryId,
+          quantity: inventory.quantity,
+          availableQuantity: inventory.availableQuantity,
+        },
         data: {
-          quantity: newQuantity,
-          availableQuantity: newQuantity - inventory.reservedQuantity,
+          quantity: { increment: delta },
+          availableQuantity: { increment: delta },
         },
       });
+      if (changed.count !== 1) throw new Error("CONCURRENT_STOCK_UPDATE");
 
       await tx.inventoryMovement.create({
         data: {
@@ -248,7 +342,7 @@ export const catalogRepository = {
         },
       });
 
-      return updated;
+      return tx.inventory.findUniqueOrThrow({ where: { id: inventoryId } });
     });
   },
 

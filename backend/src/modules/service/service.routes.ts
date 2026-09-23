@@ -11,6 +11,7 @@ import {
   createService,
   deleteService,
   getService,
+  listBusinessServices,
   listCategories,
   listServices,
   removeCompatibility,
@@ -50,6 +51,13 @@ router.get(
   "/",
   validateQuery(serviceListQuerySchema, "Invalid query parameters", true),
   listServices,
+);
+router.get(
+  "/business",
+  authenticate,
+  admin,
+  validateQuery(serviceListQuerySchema, "Invalid query parameters", true),
+  listBusinessServices,
 );
 router.post(
   "/",
