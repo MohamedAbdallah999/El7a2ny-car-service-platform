@@ -69,13 +69,6 @@ export interface LoginChallengeResponse {
 // POST /api/auth/login
 export type LoginResponse = AuthSuccessResponse | LoginChallengeResponse;
 
-// POST /api/auth/admin/invitations
-export interface AdminInvitationResponse {
-  message: string;
-  invitationToken: string;
-  expiresAt: string;
-}
-
 export const isLoginChallengeResponse = (
   response: LoginResponse,
 ): response is LoginChallengeResponse => "requiresTwoFactor" in response;

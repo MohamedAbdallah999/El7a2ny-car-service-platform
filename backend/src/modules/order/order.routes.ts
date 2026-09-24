@@ -11,6 +11,7 @@ import {
   getOrder,
   listBusinessOrders,
   listMyOrders,
+  processOrderReturn,
   updateOrderStatus,
   updateShipmentStatus,
 } from "./order.controller.js";
@@ -60,6 +61,7 @@ router.patch(
   validateBody(orderStatusUpdateSchema, "Invalid status update", true),
   updateOrderStatus,
 );
+router.post("/:orderId/return", authenticate, admin, processOrderReturn);
 router.post(
   "/:orderId/shipments",
   authenticate,

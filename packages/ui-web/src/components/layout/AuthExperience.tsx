@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { classNames } from "../shared.js";
 
 export function AuthBrandPanel() {
   return (
@@ -95,5 +96,104 @@ export function AuthHeading({
       <h2>{title}</h2>
       <p>{description}</p>
     </header>
+  );
+}
+
+const businessRegistrationSteps = [
+  "Business Info",
+  "Services & Hours",
+  "Verification",
+  "Done",
+];
+
+export function BusinessAuthBrandPanel({
+  mode,
+  currentStep = 1,
+}: {
+  mode: "login" | "register";
+  currentStep?: number;
+}) {
+  const isLogin = mode === "login";
+
+  return (
+    <div
+      className={classNames(
+        "ui-business-auth-brand",
+        isLogin && "ui-business-auth-brand--login",
+      )}
+    >
+      <div className="ui-business-auth-brand__intro">
+        <div className="ui-business-auth-brand__logo">
+          <span aria-hidden="true" />
+          <strong>EL7A2NY</strong>
+          <small>Business Portal</small>
+        </div>
+        <h1>
+          {isLogin ? (
+            <>
+              Run your shop
+              <br />
+              like a pro.
+            </>
+          ) : (
+            <>
+              Register your
+              <br />
+              business.
+            </>
+          )}
+        </h1>
+        <p>
+          {isLogin
+            ? "Manage bookings, inventory, and revenue — all from one place."
+            : "Join 1,200+ shops across Egypt on the El7a2ny platform."}
+        </p>
+      </div>
+
+      {isLogin ? (
+        <ul className="ui-business-auth-brand__benefits">
+          <li>
+            <span aria-hidden="true">✓</span>
+            <div>
+              <strong>Zero paperwork</strong>
+              <small>Digital service records and invoices</small>
+            </div>
+          </li>
+          <li>
+            <span aria-hidden="true">✓</span>
+            <div>
+              <strong>Real-time dashboard</strong>
+              <small>See bookings and revenue at a glance</small>
+            </div>
+          </li>
+          <li>
+            <span aria-hidden="true">✓</span>
+            <div>
+              <strong>Customer management</strong>
+              <small>Build loyalty with every interaction</small>
+            </div>
+          </li>
+        </ul>
+      ) : (
+        <ol className="ui-business-auth-brand__steps">
+          {businessRegistrationSteps.map((label, index) => {
+            const step = index + 1;
+            const complete = step < currentStep;
+            return (
+              <li
+                key={label}
+                className={classNames(
+                  step === currentStep && "is-current",
+                  complete && "is-complete",
+                )}
+              >
+                <span aria-hidden="true">{complete ? "✓" : step}</span>
+                {label}
+              </li>
+            );
+          })}
+        </ol>
+      )}
+    </div>
   );
 }

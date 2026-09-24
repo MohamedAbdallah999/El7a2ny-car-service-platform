@@ -9,6 +9,7 @@
     "start": "node dist/src/server.js",
     "lint": "eslint src prisma tests",
     "test": "tsx --test tests/*.test.ts",
+    "test:e2e-admin": "tsx scripts/verify-admin-e2e.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "prisma:generate": "prisma generate",
     "prisma:validate": "prisma validate",

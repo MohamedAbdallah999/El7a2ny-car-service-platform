@@ -1,4 +1,7 @@
-import type { PaginatedResult, ServiceRequestSummary } from "@car-platform/types";
+import type {
+  PaginatedResult,
+  ServiceRequestSummary,
+} from "@car-platform/types";
 import type { ApiClient } from "./client.js";
 import { toQueryString } from "./query.js";
 
@@ -30,15 +33,45 @@ export const createServiceRequestsApi = (client: ApiClient) => ({
       `/service-requests/mine${toQueryString(params)}`,
     ),
 
+  listForBusiness: (params: ListServiceRequestsParams = {}) =>
+    client.request<PaginatedResult<ServiceRequestSummary>>(
+      `/service-requests/business${toQueryString(params)}`,
+    ),
+
   getById: (requestId: string) =>
     client.request<{ request: ServiceRequestSummary }>(
       `/service-requests/${requestId}`,
     ),
 
-  updateStatus: (requestId: string, status: string) =>
+  updateStatus: (
+    requestId: string,
+    status: string,
+    amounts: { estimatedPrice?: number; finalPrice?: number } = {},
+  ) =>
     client.request<{ request: ServiceRequestSummary }>(
       `/service-requests/${requestId}/status`,
-      { method: "PATCH", body: JSON.stringify({ status }) },
+      { method: "PATCH", body: JSON.stringify({ status, ...amounts }) },
+    ),
+  accept: (requestId: string) =>
+    client.request<{ request: ServiceRequestSummary }>(
+      `/service-requests/${requestId}/accept`,
+      { method: "POST" },
+    ),
+  update: (
+    requestId: string,
+    payload: { title?: string; description?: string | null; priority?: string },
+  ) =>
+    client.request<{ request: ServiceRequestSummary }>(
+      `/service-requests/${requestId}`,
+      { method: "PATCH", body: JSON.stringify(payload) },
+    ),
+  addMessage: (requestId: string, message: string) =>
+    client.request<{ message: unknown }>(
+      `/service-requests/${requestId}/messages`,
+      {
+        method: "POST",
+        body: JSON.stringify({ message }),
+      },
     ),
 });
 

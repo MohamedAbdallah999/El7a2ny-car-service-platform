@@ -7,16 +7,20 @@ import {
 import { UserRole } from "../../generated/prisma/client.js";
 import {
   createBooking,
+  createBusinessBooking,
   getBooking,
   listBookingHistory,
   listBusinessBookings,
   listMyBookings,
+  rescheduleBooking,
   updateBookingStatus,
 } from "./booking.controller.js";
 import {
   bookingListQuerySchema,
   bookingStatusUpdateSchema,
   createBookingSchema,
+  createBusinessBookingSchema,
+  rescheduleBookingSchema,
 } from "./booking.validation.js";
 
 const router = Router();
@@ -35,6 +39,13 @@ router.post(
   validateBody(createBookingSchema, "Invalid booking data", true),
   createBooking,
 );
+router.post(
+  "/business",
+  authenticate,
+  admin,
+  validateBody(createBusinessBookingSchema, "Invalid booking data", true),
+  createBusinessBooking,
+);
 router.get(
   "/mine",
   authenticate,
@@ -50,6 +61,13 @@ router.get(
   listBusinessBookings,
 );
 router.get("/:bookingId", authenticate, anyAuthenticated, getBooking);
+router.patch(
+  "/:bookingId",
+  authenticate,
+  admin,
+  validateBody(rescheduleBookingSchema, "Invalid booking update", true),
+  rescheduleBooking,
+);
 router.patch(
   "/:bookingId/status",
   authenticate,

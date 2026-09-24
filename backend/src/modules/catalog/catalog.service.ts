@@ -36,6 +36,27 @@ const loadOwnedProduct = async (productId: string, userId: string) => {
   return product;
 };
 
+export const normalizeInventoryMovementQuantity = (
+  type: AdjustInventoryInput["type"],
+  quantity: number,
+): number => {
+  const outboundTypes = new Set([
+    "SALE",
+    "DAMAGE",
+    "TRANSFER_OUT",
+    "RESERVATION",
+  ]);
+  const inboundTypes = new Set([
+    "PURCHASE",
+    "RETURN",
+    "TRANSFER_IN",
+    "RELEASE",
+  ]);
+  if (outboundTypes.has(type)) return -Math.abs(quantity);
+  if (inboundTypes.has(type)) return Math.abs(quantity);
+  return quantity;
+};
+
 export const catalogService = {
   listCategories(includeInactive: boolean) {
     return catalogRepository.listCategories(!includeInactive);
@@ -92,6 +113,22 @@ export const catalogService = {
     return { items, meta: buildPaginationMeta(page, limit, total) };
   },
 
+  async listForBusiness(userId: string, query: ProductListQueryInput) {
+    const adminId = await requireAdminId(userId);
+    const { page, limit, skip, take } = normalizePagination(query);
+    const { items, total } = await catalogRepository.listByAdmin(
+      adminId,
+      {
+        categoryId: query.categoryId,
+        brand: query.brand,
+        search: query.search,
+      },
+      skip,
+      take,
+    );
+    return { items, meta: buildPaginationMeta(page, limit, total) };
+  },
+
   async getBySlug(slug: string) {
     const product = await catalogRepository.findBySlug(slug);
     if (!product) {
@@ -117,19 +154,30 @@ export const catalogService = {
     if (!business) {
       throw new AppError(403, "You do not manage this business");
     }
-    const category = await catalogRepository.findCategoryById(
-      input.categoryId,
-    );
+    const category = await catalogRepository.findCategoryById(input.categoryId);
     if (!category) {
       throw new AppError(400, "Unknown product category");
     }
     if (await catalogRepository.skuExists(input.sku)) {
       throw new AppError(409, "A product with this SKU already exists");
     }
+    if (input.inventory) {
+      const branch = await catalogRepository.findBranchInBusiness(
+        input.inventory.branchId,
+        input.businessId,
+      );
+      if (!branch) {
+        throw new AppError(
+          400,
+          "Inventory branch does not belong to this business",
+        );
+      }
+    }
     const slug = await generateUniqueSlug(input.name, (candidate) =>
       catalogRepository.slugExists(candidate),
     );
-    return catalogRepository.create({ ...input, slug });
+    const { inventory, ...product } = input;
+    return catalogRepository.create({ ...product, slug }, inventory);
   },
 
   async update(userId: string, productId: string, input: UpdateProductInput) {
@@ -142,7 +190,11 @@ export const catalogService = {
         throw new AppError(400, "Unknown product category");
       }
     }
-    if (input.sku && input.sku !== product.sku && (await catalogRepository.skuExists(input.sku))) {
+    if (
+      input.sku &&
+      input.sku !== product.sku &&
+      (await catalogRepository.skuExists(input.sku))
+    ) {
       throw new AppError(409, "A product with this SKU already exists");
     }
     return catalogRepository.update(productId, input);
@@ -153,7 +205,11 @@ export const catalogService = {
     await catalogRepository.softDelete(productId);
   },
 
-  async addImage(userId: string, productId: string, input: AddProductImageInput) {
+  async addImage(
+    userId: string,
+    productId: string,
+    input: AddProductImageInput,
+  ) {
     await loadOwnedProduct(productId, userId);
     return catalogRepository.addImage(productId, input);
   },
@@ -210,8 +266,13 @@ export const catalogService = {
     if (!product || product.businessId !== input.businessId) {
       throw new AppError(400, "Product does not belong to this business");
     }
-    if (await catalogRepository.inventoryExists(input.branchId, input.productId)) {
-      throw new AppError(409, "Inventory already exists for this product at this branch");
+    if (
+      await catalogRepository.inventoryExists(input.branchId, input.productId)
+    ) {
+      throw new AppError(
+        409,
+        "Inventory already exists for this product at this branch",
+      );
     }
     return catalogRepository.createInventory({
       ...input,
@@ -219,7 +280,13 @@ export const catalogService = {
     });
   },
 
-  async listInventory(userId: string, businessId: string, branchId: string | undefined, page: number, limit: number) {
+  async listInventory(
+    userId: string,
+    businessId: string,
+    branchId: string | undefined,
+    page: number,
+    limit: number,
+  ) {
     const adminId = await requireAdminId(userId);
     const business = await catalogRepository.findBusinessOwnedBy(
       businessId,
@@ -250,18 +317,31 @@ export const catalogService = {
     if (inventory.business.admin.userId !== userId) {
       throw new AppError(403, "You do not manage this inventory");
     }
+    const quantity = normalizeInventoryMovementQuantity(
+      input.type,
+      input.quantity,
+    );
     try {
       return await catalogRepository.applyMovement(
         inventoryId,
         inventory.productId,
         input.type,
-        input.quantity,
+        quantity,
         userId,
         input.notes,
       );
     } catch (error) {
       if (error instanceof Error && error.message === "INSUFFICIENT_STOCK") {
         throw new AppError(409, "This adjustment would make stock negative");
+      }
+      if (
+        error instanceof Error &&
+        error.message === "CONCURRENT_STOCK_UPDATE"
+      ) {
+        throw new AppError(
+          409,
+          "Stock changed while this adjustment was saving",
+        );
       }
       throw error;
     }

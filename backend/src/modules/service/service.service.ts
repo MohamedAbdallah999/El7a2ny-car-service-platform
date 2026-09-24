@@ -89,6 +89,22 @@ export const serviceModuleService = {
     return { items, meta: buildPaginationMeta(page, limit, total) };
   },
 
+  async listForBusiness(userId: string, query: ServiceListQueryInput) {
+    const adminId = await requireAdminId(userId);
+    const { page, limit, skip, take } = normalizePagination(query);
+    const { items, total } = await serviceRepository.listByAdmin(
+      adminId,
+      {
+        branchId: query.branchId,
+        categoryId: query.categoryId,
+        search: query.search,
+      },
+      skip,
+      take,
+    );
+    return { items, meta: buildPaginationMeta(page, limit, total) };
+  },
+
   async getById(serviceId: string) {
     const service = await serviceRepository.findById(serviceId);
     if (!service) {

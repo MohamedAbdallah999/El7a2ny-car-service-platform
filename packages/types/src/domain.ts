@@ -18,10 +18,24 @@ export interface BusinessBranchSummary {
   name: string;
   city: string;
   addressLine1: string;
+  addressLine2?: string | null;
   isPrimary: boolean;
   phone: string | null;
   latitude: string | null;
   longitude: string | null;
+  email?: string | null;
+  state?: string | null;
+  country?: string;
+  postalCode?: string | null;
+  status?: string;
+  hours?: BusinessHour[];
+}
+
+export interface BusinessHour {
+  dayOfWeek: number;
+  openingTime: string | null;
+  closingTime: string | null;
+  isClosed: boolean;
 }
 
 export interface BusinessSummary {
@@ -35,6 +49,10 @@ export interface BusinessSummary {
   verificationStatus: VerificationStatus;
   averageRating: string;
   totalReviews: number;
+  description?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  website?: string | null;
   branches?: BusinessBranchSummary[];
 }
 
@@ -51,6 +69,7 @@ export interface ServiceSummary {
   isOnlineBooking: boolean;
   isActive: boolean;
   business?: BusinessSummary;
+  category?: ServiceCategory;
 }
 
 export interface ServiceCategory {
@@ -95,10 +114,12 @@ export interface Vehicle {
 export interface Booking {
   id: string;
   bookingNumber: string;
+  customerId: string;
   businessId: string;
   branchId: string;
   vehicleId: string;
   serviceId: string;
+  serviceRequestId: string | null;
   scheduledDate: string;
   startTime: string;
   endTime: string;
@@ -111,10 +132,23 @@ export interface Booking {
   branch?: BusinessBranchSummary;
   service?: ServiceSummary;
   vehicle?: Vehicle;
+  customer?: {
+    user?: {
+      firstName: string;
+      lastName: string;
+      email?: string;
+      phone?: string | null;
+    };
+  };
 }
 
 export interface ServiceRequestSummary {
   id: string;
+  customerId: string;
+  vehicleId: string;
+  businessId: string | null;
+  branchId: string | null;
+  serviceId: string | null;
   requestNumber: string;
   title: string;
   description: string | null;
@@ -124,7 +158,17 @@ export interface ServiceRequestSummary {
   finalPrice: string | null;
   createdAt: string;
   business?: BusinessSummary;
+  service?: ServiceSummary | null;
   vehicle?: Vehicle;
+  customer?: {
+    user?: {
+      firstName: string;
+      lastName: string;
+      email?: string;
+      phone?: string | null;
+    };
+  };
+  booking?: Booking | null;
 }
 
 export interface ProductImage {
@@ -164,6 +208,7 @@ export interface Product {
   brand: string | null;
   price: string;
   compareAtPrice: string | null;
+  costPrice?: string | null;
   currency: string;
   status: string;
   isFeatured: boolean;

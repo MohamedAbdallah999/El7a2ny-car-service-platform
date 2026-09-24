@@ -349,7 +349,6 @@ model User {
   admin                       Admin?
   sessions                    UserSession[]
   verificationTokens          UserVerificationToken[]
-  adminInvitationsCreated     AdminInvitation[]             @relation("AdminInvitationCreatedBy")
   loginChallenges             LoginChallenge[]
   notifications               Notification[]
   pushDevices                 PushDevice[]
@@ -408,39 +407,19 @@ model UserVerificationToken {
 }
 
 model PendingRegistration {
-  id                String            @id @default(uuid()) @db.Uuid
-  email             String            @unique @db.VarChar(255)
-  phone             String            @unique @db.VarChar(30)
-  passwordHash      String            @map("password_hash")
-  firstName         String            @map("first_name") @db.VarChar(100)
-  lastName          String            @map("last_name") @db.VarChar(100)
-  role              UserRole
-  adminInvitationId String?           @unique @map("admin_invitation_id") @db.Uuid
-  expiresAt         DateTime          @map("expires_at")
-  createdAt         DateTime          @default(now()) @map("created_at")
-  updatedAt         DateTime          @updatedAt @map("updated_at")
-
-  adminInvitation AdminInvitation? @relation(fields: [adminInvitationId], references: [id], onDelete: Cascade)
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique @db.VarChar(255)
+  phone        String   @unique @db.VarChar(30)
+  passwordHash String   @map("password_hash")
+  firstName    String   @map("first_name") @db.VarChar(100)
+  lastName     String   @map("last_name") @db.VarChar(100)
+  role         UserRole
+  expiresAt    DateTime @map("expires_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@index([expiresAt])
   @@map("pending_registrations")
-}
-
-model AdminInvitation {
-  id              String   @id @default(uuid()) @db.Uuid
-  email           String   @unique @db.VarChar(255)
-  phone           String   @unique @db.VarChar(30)
-  tokenHash       String   @unique @map("token_hash") @db.VarChar(64)
-  createdByUserId String   @map("created_by_user_id") @db.Uuid
-  expiresAt       DateTime @map("expires_at")
-  usedAt          DateTime? @map("used_at")
-  createdAt       DateTime @default(now()) @map("created_at")
-
-  createdBy          User                 @relation("AdminInvitationCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
-  pendingRegistration PendingRegistration?
-
-  @@index([expiresAt])
-  @@map("admin_invitations")
 }
 
 model LoginChallenge {
@@ -519,6 +498,7 @@ model Business {
   taxNumber          String?            @map("tax_number") @db.VarChar(100)
   email              String?            @db.VarChar(255)
   phone              String?            @db.VarChar(30)
+  onboardingServices Json?              @map("onboarding_services")
   website            String?
   status             BusinessStatus     @default(ACTIVE)
   verificationStatus VerificationStatus @default(PENDING) @map("verification_status")
@@ -891,6 +871,7 @@ model ServiceRequest {
   messages    ServiceRequestMessage[]
   payments    Payment[]
   disputes    Dispute[]
+  booking     Booking?
 
   @@index([customerId])
   @@index([businessId])
@@ -942,6 +923,7 @@ model Booking {
   branchId           String        @map("branch_id") @db.Uuid
   vehicleId          String        @map("vehicle_id") @db.Uuid
   serviceId          String        @map("service_id") @db.Uuid
+  serviceRequestId   String?       @unique @map("service_request_id") @db.Uuid
   scheduledDate      DateTime      @map("scheduled_date") @db.Date
   startTime          DateTime      @map("start_time") @db.Time
   endTime            DateTime      @map("end_time") @db.Time
@@ -966,6 +948,7 @@ model Booking {
   branch               BusinessBranch         @relation(fields: [branchId], references: [id], onDelete: Restrict)
   vehicle              Vehicle                @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
   service              Service                @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  serviceRequest       ServiceRequest?        @relation(fields: [serviceRequestId], references: [id], onDelete: SetNull)
   attachments          BookingAttachment[]
   statusHistory        BookingStatusHistory[]
   payments             Payment[]

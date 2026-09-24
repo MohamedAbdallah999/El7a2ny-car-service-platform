@@ -16,6 +16,7 @@ import {
   getProduct,
   getProductBySlug,
   listCategories,
+  listBusinessProducts,
   listInventory,
   listMovements,
   listProducts,
@@ -82,6 +83,13 @@ router.get(
   "/products",
   validateQuery(productListQuerySchema, "Invalid query parameters", true),
   listProducts,
+);
+router.get(
+  "/products/business",
+  authenticate,
+  admin,
+  validateQuery(productListQuerySchema, "Invalid query parameters", true),
+  listBusinessProducts,
 );
 router.get("/products/slug/:slug", getProductBySlug);
 router.post(

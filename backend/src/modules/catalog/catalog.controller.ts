@@ -42,6 +42,14 @@ export const listProducts = async (req: Request, res: Response) => {
   res.status(200).json(result);
 };
 
+export const listBusinessProducts = async (req: Request, res: Response) => {
+  const result = await catalogService.listForBusiness(
+    requireUserId(req),
+    req.validatedQuery as unknown as ProductListQueryInput,
+  );
+  res.status(200).json(result);
+};
+
 export const getProductBySlug = async (req: Request, res: Response) => {
   const product = await catalogService.getBySlug(requireParam(req, "slug"));
   res.status(200).json({ product });
@@ -70,7 +78,10 @@ export const updateProduct = async (req: Request, res: Response) => {
 };
 
 export const deleteProduct = async (req: Request, res: Response) => {
-  await catalogService.remove(requireUserId(req), requireParam(req, "productId"));
+  await catalogService.remove(
+    requireUserId(req),
+    requireParam(req, "productId"),
+  );
   res.status(204).send();
 };
 
@@ -84,7 +95,10 @@ export const addProductImage = async (req: Request, res: Response) => {
 };
 
 export const removeProductImage = async (req: Request, res: Response) => {
-  await catalogService.removeImage(requireUserId(req), requireParam(req, "imageId"));
+  await catalogService.removeImage(
+    requireUserId(req),
+    requireParam(req, "imageId"),
+  );
   res.status(204).send();
 };
 
@@ -119,7 +133,8 @@ export const listInventory = async (req: Request, res: Response) => {
     res.status(400).json({ error: "businessId query parameter is required" });
     return;
   }
-  const branchId = typeof req.query.branchId === "string" ? req.query.branchId : undefined;
+  const branchId =
+    typeof req.query.branchId === "string" ? req.query.branchId : undefined;
   const page = Number(req.query.page) || undefined;
   const limit = Number(req.query.limit) || undefined;
   const result = await catalogService.listInventory(

@@ -6,8 +6,6 @@ import { authRepository } from "./auth.repository.js";
 import { createOpaqueToken, hashOpaqueToken } from "./auth.secrets.js";
 import { signToken } from "./auth.token.js";
 import type {
-  AdminInvitationInput,
-  AdminRegistrationInput,
   ForgotPasswordInput,
   LoginInput,
   LoginVerificationInput,
@@ -59,25 +57,11 @@ export const authService = {
     return this.startRegistration(input, UserRole.CUSTOMER);
   },
 
-  async startAdminRegistration(input: AdminRegistrationInput) {
-    const invitation = await authRepository.findAdminInvitation(
-      input.email,
-      input.phone,
-      hashOpaqueToken(input.invitationToken),
-    );
-
-    if (!invitation) {
-      throw new AppError(403, "Invalid or expired admin invitation");
-    }
-
-    return this.startRegistration(input, UserRole.ADMIN, invitation.id);
+  async startAdminRegistration(input: RegisterInput) {
+    return this.startRegistration(input, UserRole.ADMIN);
   },
 
-  async startRegistration(
-    input: RegisterInput,
-    role: UserRole,
-    adminInvitationId?: string,
-  ) {
+  async startRegistration(input: RegisterInput, role: UserRole) {
     const existingUser = await authRepository.findUserByEmailOrPhone(
       input.email,
       input.phone,
@@ -85,17 +69,6 @@ export const authService = {
 
     if (existingUser) {
       throw duplicateUserError();
-    }
-
-    if (role === UserRole.CUSTOMER) {
-      const reservedContact =
-        await authRepository.findActiveAdminInvitationByContact(
-          input.email,
-          input.phone,
-        );
-      if (reservedContact) {
-        throw new AppError(409, "This email or phone cannot be registered");
-      }
     }
 
     const passwordHash = await hashPassword(input.password);
@@ -109,7 +82,6 @@ export const authService = {
         firstName: input.firstName,
         lastName: input.lastName,
         role,
-        adminInvitationId,
       });
     } catch (error) {
       if (isUniqueConstraintError(error)) {
@@ -264,41 +236,6 @@ export const authService = {
 
     await authRepository.updateLastLogin(challenge.user.id);
     return authenticationResponse(challenge.user);
-  },
-
-  async createAdminInvitation(
-    createdByUserId: string,
-    input: AdminInvitationInput,
-  ) {
-    const existingUser = await authRepository.findUserByEmailOrPhone(
-      input.email,
-      input.phone,
-    );
-    if (existingUser) {
-      throw duplicateUserError();
-    }
-
-    const pendingRegistration =
-      await authRepository.findPendingRegistrationByContact(
-        input.email,
-        input.phone,
-      );
-    if (pendingRegistration) {
-      throw new AppError(409, "This email or phone is pending registration");
-    }
-
-    const invitationToken = createOpaqueToken();
-    const invitation = await authRepository.createAdminInvitation({
-      ...input,
-      tokenHash: hashOpaqueToken(invitationToken),
-      createdByUserId,
-    });
-
-    return {
-      message: "Admin invitation created",
-      invitationToken,
-      expiresAt: invitation.expiresAt,
-    };
   },
 
   async getProfile(userId: string) {

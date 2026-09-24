@@ -13,8 +13,10 @@
   },
   "dependencies": {
     "@car-platform/api-client": "workspace:*",
+    "@car-platform/auth": "workspace:*",
     "@car-platform/types": "workspace:*",
     "@car-platform/ui-web": "workspace:*",
+    "@car-platform/validation": "workspace:*",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-router-dom": "^7.18.4"

@@ -28,6 +28,15 @@ const isErrorResponse = (value: unknown): value is ApiErrorResponse =>
   value !== null &&
   typeof (value as ApiErrorResponse).error === "string";
 
+const errorResponseMessage = (response: ApiErrorResponse): string => {
+  const detail = response.details
+    ? Object.values(response.details).find(
+        (messages) => messages && messages.length > 0,
+      )?.[0]
+    : undefined;
+  return detail ? `${response.error}: ${detail}` : response.error;
+};
+
 export function createApiClient({
   baseUrl,
   fetchImplementation = fetch,
@@ -60,7 +69,7 @@ export function createApiClient({
 
       if (!response.ok) {
         const message = isErrorResponse(body)
-          ? body.error
+          ? errorResponseMessage(body)
           : `HTTP request failed with status ${response.status}`;
         throw new ApiClientError(response.status, message);
       }

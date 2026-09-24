@@ -78,7 +78,8 @@ export function MyBookingsPage() {
     }
   }
 
-  function statusLabel(currentTab: BookingTab) {
+  function statusLabel(currentTab: BookingTab, booking: Booking) {
+    if (booking.status === "PENDING") return "Pending approval";
     return currentTab === "upcoming"
       ? "Upcoming"
       : currentTab[0]?.toUpperCase() + currentTab.slice(1);
@@ -119,7 +120,7 @@ export function MyBookingsPage() {
                   <div className="booking-card__reference">
                     <span>{booking.bookingNumber}</span>
                     <span className={`booking-status booking-status--${tab}`}>
-                      {statusLabel(tab)}
+                      {statusLabel(tab, booking)}
                     </span>
                   </div>
                   <h2>{booking.service?.name ?? "Service"}</h2>
@@ -146,7 +147,7 @@ export function MyBookingsPage() {
                       undefined,
                       { day: "2-digit", month: "short", year: "numeric" },
                     )}{" "}
-                    · {booking.startTime}
+                    · {booking.startTime.slice(11, 16)}
                   </strong>
                 </div>
                 <div>

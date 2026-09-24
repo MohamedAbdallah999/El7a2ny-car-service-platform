@@ -4,10 +4,8 @@ import {
   normalizePagination,
 } from "@car-platform/utils";
 import { AppError } from "../../errors/app-error.js";
-import {
-  businessRepository,
-  timeStringToDate,
-} from "./business.repository.js";
+import type { UserRole } from "../../generated/prisma/client.js";
+import { businessRepository, timeStringToDate } from "./business.repository.js";
 import type {
   BusinessHoursInput,
   BusinessListQueryInput,
@@ -64,7 +62,11 @@ export const businessService = {
   async listPublic(query: BusinessListQueryInput) {
     const { page, limit, skip, take } = normalizePagination(query);
     const { items, total } = await businessRepository.listPublic(
-      { businessType: query.businessType, city: query.city, search: query.search },
+      {
+        businessType: query.businessType,
+        city: query.city,
+        search: query.search,
+      },
       skip,
       take,
     );
@@ -98,13 +100,8 @@ export const businessService = {
       {
         businessType: query.businessType,
         search: query.search,
-        verificationStatus:
-          query.verificationStatus as
-            | "PENDING"
-            | "UNDER_REVIEW"
-            | "VERIFIED"
-            | "REJECTED"
-            | undefined,
+        verificationStatus: query.verificationStatus as
+          "PENDING" | "UNDER_REVIEW" | "VERIFIED" | "REJECTED" | undefined,
       },
       skip,
       take,
@@ -112,10 +109,13 @@ export const businessService = {
     return { items, meta: buildPaginationMeta(page, limit, total) };
   },
 
-  async getById(businessId: string) {
+  async getById(userId: string, role: UserRole, businessId: string) {
     const business = await businessRepository.findById(businessId);
     if (!business) {
       throw new AppError(404, "Business not found");
+    }
+    if (role !== "SUPER_ADMIN" && business.admin.userId !== userId) {
+      throw new AppError(403, "You do not manage this business");
     }
     return business;
   },
@@ -141,7 +141,11 @@ export const businessService = {
     return businessRepository.updateStatus(businessId, input.status);
   },
 
-  async createBranch(userId: string, businessId: string, input: CreateBranchInput) {
+  async createBranch(
+    userId: string,
+    businessId: string,
+    input: CreateBranchInput,
+  ) {
     await loadOwnedBusiness(businessId, userId);
     return businessRepository.createBranch(businessId, input);
   },
@@ -154,7 +158,11 @@ export const businessService = {
     return businessRepository.listBranches(businessId);
   },
 
-  async updateBranch(userId: string, branchId: string, input: UpdateBranchInput) {
+  async updateBranch(
+    userId: string,
+    branchId: string,
+    input: UpdateBranchInput,
+  ) {
     const branch = await loadOwnedBranch(branchId, userId);
     return businessRepository.updateBranch(branchId, branch.businessId, input);
   },
@@ -175,7 +183,11 @@ export const businessService = {
     return businessRepository.setHours(branchId, hours);
   },
 
-  async addHoliday(userId: string, branchId: string, input: CreateHolidayInput) {
+  async addHoliday(
+    userId: string,
+    branchId: string,
+    input: CreateHolidayInput,
+  ) {
     await loadOwnedBranch(branchId, userId);
     return businessRepository.createHoliday(branchId, input.date, input.reason);
   },
@@ -199,12 +211,20 @@ export const businessService = {
     await businessRepository.deleteHoliday(holidayId);
   },
 
-  async addDocument(userId: string, businessId: string, input: CreateDocumentInput) {
+  async addDocument(
+    userId: string,
+    businessId: string,
+    input: CreateDocumentInput,
+  ) {
     await loadOwnedBusiness(businessId, userId);
     return businessRepository.createDocument(businessId, input);
   },
 
-  async listDocuments(userId: string, businessId: string, isSuperAdmin: boolean) {
+  async listDocuments(
+    userId: string,
+    businessId: string,
+    isSuperAdmin: boolean,
+  ) {
     if (!isSuperAdmin) {
       await loadOwnedBusiness(businessId, userId);
     }

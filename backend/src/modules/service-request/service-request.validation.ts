@@ -24,6 +24,17 @@ export const serviceRequestStatusUpdateSchema = z
   })
   .strict();
 
+export const updatePendingServiceRequestSchema = z
+  .object({
+    title: z.string().trim().min(1).max(200).optional(),
+    description: z.string().trim().max(5000).nullable().optional(),
+    priority: z.enum(SERVICE_REQUEST_PRIORITY_VALUES).optional(),
+  })
+  .strict()
+  .refine((input) => Object.keys(input).length > 0, {
+    message: "At least one field is required",
+  });
+
 export const serviceRequestListQuerySchema = paginationQuerySchema
   .extend({
     status: z.enum(SERVICE_REQUEST_STATUS_VALUES).optional(),
@@ -50,6 +61,9 @@ export type CreateServiceRequestInput = z.infer<
 >;
 export type ServiceRequestStatusUpdateInput = z.infer<
   typeof serviceRequestStatusUpdateSchema
+>;
+export type UpdatePendingServiceRequestInput = z.infer<
+  typeof updatePendingServiceRequestSchema
 >;
 export type ServiceRequestListQueryInput = z.infer<
   typeof serviceRequestListQuerySchema

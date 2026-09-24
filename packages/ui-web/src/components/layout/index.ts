@@ -5,10 +5,18 @@ export {
   AuthHeading,
   AuthProgress,
   AuthTabs,
+  BusinessAuthBrandPanel,
 } from "./AuthExperience.js";
-export { Container, Divider, PageHeader, SectionLabel } from "./Layout.js";
+export {
+  Container,
+  DashboardLayout,
+  Divider,
+  PageHeader,
+  SectionLabel,
+} from "./Layout.js";
 export type {
   ContainerProps,
+  DashboardLayoutProps,
   DividerProps,
   PageHeaderProps,
   SectionLabelProps,

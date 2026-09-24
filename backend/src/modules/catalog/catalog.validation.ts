@@ -31,12 +31,21 @@ export const createProductSchema = z
     currency: z.string().trim().length(3).optional(),
     weight: z.coerce.number().min(0).optional(),
     isFeatured: z.boolean().optional(),
+    inventory: z
+      .object({
+        branchId: uuidSchema,
+        quantity: z.coerce.number().int().min(0).default(0),
+        lowStockThreshold: z.coerce.number().int().min(0).default(0),
+        reorderQuantity: z.coerce.number().int().min(0).default(0),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 
 export const updateProductSchema = createProductSchema
   .partial()
-  .omit({ businessId: true })
+  .omit({ businessId: true, inventory: true })
   .extend({
     status: z
       .enum(["ACTIVE", "INACTIVE", "OUT_OF_STOCK", "DISCONTINUED", "SUSPENDED"])
@@ -87,7 +96,10 @@ export const createInventorySchema = z
 export const adjustInventorySchema = z
   .object({
     type: z.enum(INVENTORY_MOVEMENT_TYPE_VALUES),
-    quantity: z.coerce.number().int().refine((v) => v !== 0, "Quantity must not be zero"),
+    quantity: z.coerce
+      .number()
+      .int()
+      .refine((v) => v !== 0, "Quantity must not be zero"),
     notes: z.string().trim().max(1000).optional(),
   })
   .strict();

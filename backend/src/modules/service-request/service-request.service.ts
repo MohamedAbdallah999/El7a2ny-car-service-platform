@@ -4,8 +4,12 @@ import {
   normalizePagination,
 } from "@car-platform/utils";
 import { AppError } from "../../errors/app-error.js";
-import type { ServiceRequestStatus, UserRole } from "../../generated/prisma/client.js";
+import type {
+  ServiceRequestStatus,
+  UserRole,
+} from "../../generated/prisma/client.js";
 import { businessRepository } from "../business/business.repository.js";
+import { serviceRepository } from "../service/service.repository.js";
 import { vehicleRepository } from "../vehicle/vehicle.repository.js";
 import { serviceRequestRepository } from "./service-request.repository.js";
 import type {
@@ -14,9 +18,13 @@ import type {
   CreateServiceRequestInput,
   ServiceRequestListQueryInput,
   ServiceRequestStatusUpdateInput,
+  UpdatePendingServiceRequestInput,
 } from "./service-request.validation.js";
 
-const ALLOWED_TRANSITIONS: Record<ServiceRequestStatus, ServiceRequestStatus[]> = {
+const ALLOWED_TRANSITIONS: Record<
+  ServiceRequestStatus,
+  ServiceRequestStatus[]
+> = {
   PENDING: ["REVIEWING", "REJECTED", "CANCELLED"],
   REVIEWING: ["QUOTED", "REJECTED", "CANCELLED"],
   QUOTED: ["APPROVED", "REJECTED", "CANCELLED"],
@@ -33,7 +41,6 @@ const ALLOWED_TRANSITIONS: Record<ServiceRequestStatus, ServiceRequestStatus[]> 
 // business's call.
 const CUSTOMER_ALLOWED_TARGETS: ServiceRequestStatus[] = [
   "CANCELLED",
-  "APPROVED",
   "REJECTED",
 ];
 
@@ -51,11 +58,13 @@ const generateUniqueRequestNumber = async (): Promise<string> => {
 
 export const serviceRequestService = {
   async create(userId: string, input: CreateServiceRequestInput) {
-    const customerId = await serviceRequestRepository.findCustomerIdByUserId(
-      userId,
-    );
+    const customerId =
+      await serviceRequestRepository.findCustomerIdByUserId(userId);
     if (!customerId) {
-      throw new AppError(403, "Only customer accounts can create service requests");
+      throw new AppError(
+        403,
+        "Only customer accounts can create service requests",
+      );
     }
 
     const vehicle = await vehicleRepository.findById(input.vehicleId);
@@ -68,6 +77,23 @@ export const serviceRequestService = {
       if (!business || business.status !== "ACTIVE") {
         throw new AppError(400, "Business is not available");
       }
+      if (input.branchId) {
+        const branch = await businessRepository.findBranchById(input.branchId);
+        if (!branch || branch.businessId !== input.businessId) {
+          throw new AppError(400, "Branch does not belong to this business");
+        }
+      }
+      if (input.serviceId) {
+        const service = await serviceRepository.findById(input.serviceId);
+        if (!service || service.businessId !== input.businessId) {
+          throw new AppError(400, "Service does not belong to this business");
+        }
+      }
+    } else if (input.branchId || input.serviceId) {
+      throw new AppError(
+        400,
+        "A business is required when selecting a branch or service",
+      );
     }
 
     const requestNumber = await generateUniqueRequestNumber();
@@ -87,9 +113,8 @@ export const serviceRequestService = {
   },
 
   async listMine(userId: string, query: ServiceRequestListQueryInput) {
-    const customerId = await serviceRequestRepository.findCustomerIdByUserId(
-      userId,
-    );
+    const customerId =
+      await serviceRequestRepository.findCustomerIdByUserId(userId);
     if (!customerId) {
       throw new AppError(403, "Only customer accounts have service requests");
     }
@@ -140,6 +165,54 @@ export const serviceRequestService = {
     return request;
   },
 
+  async accept(userId: string, requestId: string) {
+    const request = await serviceRequestRepository.findById(requestId);
+    if (!request) throw new AppError(404, "Service request not found");
+    if (!request.business || request.business.admin.userId !== userId) {
+      throw new AppError(403, "You cannot manage this service request");
+    }
+    if (request.status !== "PENDING") {
+      throw new AppError(400, "Only pending requests can be accepted");
+    }
+    if (!request.booking) {
+      throw new AppError(
+        400,
+        "This request does not have a scheduled booking to accept",
+      );
+    }
+    try {
+      return await serviceRequestRepository.acceptPending(
+        request.id,
+        request.booking.id,
+        userId,
+      );
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        ["REQUEST_NOT_PENDING", "BOOKING_NOT_PENDING"].includes(error.message)
+      ) {
+        throw new AppError(409, "This request has already been processed");
+      }
+      throw error;
+    }
+  },
+
+  async editPending(
+    userId: string,
+    requestId: string,
+    input: UpdatePendingServiceRequestInput,
+  ) {
+    const request = await serviceRequestRepository.findById(requestId);
+    if (!request) throw new AppError(404, "Service request not found");
+    if (!request.business || request.business.admin.userId !== userId) {
+      throw new AppError(403, "You cannot manage this service request");
+    }
+    if (request.status !== "PENDING") {
+      throw new AppError(400, "Only pending requests can be edited");
+    }
+    return serviceRequestRepository.update(requestId, input);
+  },
+
   async updateStatus(
     userId: string,
     role: UserRole,
@@ -156,11 +229,29 @@ export const serviceRequestService = {
         throw new AppError(403, "You cannot manage this service request");
       }
       if (!CUSTOMER_ALLOWED_TARGETS.includes(input.status)) {
-        throw new AppError(403, "Customers may only accept, decline, or cancel a request");
+        throw new AppError(
+          403,
+          "Customers may only accept, decline, or cancel a request",
+        );
       }
     } else if (role === "ADMIN") {
       if (!request.business || request.business.admin.userId !== userId) {
         throw new AppError(403, "You cannot manage this service request");
+      }
+      if (request.status === "PENDING" && input.status !== "REJECTED") {
+        throw new AppError(
+          400,
+          "Use the accept action for a pending service request",
+        );
+      }
+      if (
+        request.booking &&
+        ["IN_PROGRESS", "COMPLETED"].includes(input.status)
+      ) {
+        throw new AppError(
+          400,
+          "Start or complete this work from the Bookings page",
+        );
       }
     }
 
@@ -175,6 +266,21 @@ export const serviceRequestService = {
     }
     if (input.status === "COMPLETED" && input.finalPrice === undefined) {
       throw new AppError(400, "Completing a request requires a final price");
+    }
+
+    if (request.status === "PENDING" && input.status === "REJECTED") {
+      try {
+        return await serviceRequestRepository.rejectPending(
+          request.id,
+          request.booking?.id,
+          userId,
+        );
+      } catch (error) {
+        if (error instanceof Error && error.message === "REQUEST_NOT_PENDING") {
+          throw new AppError(409, "This request has already been processed");
+        }
+        throw error;
+      }
     }
 
     const data: Record<string, unknown> = { status: input.status };

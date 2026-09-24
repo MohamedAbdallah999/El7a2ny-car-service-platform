@@ -32,9 +32,7 @@ export const listPublicBusinesses = async (req: Request, res: Response) => {
 };
 
 export const getBusinessBySlug = async (req: Request, res: Response) => {
-  const business = await businessService.getBySlug(
-    requireParam(req, "slug"),
-  );
+  const business = await businessService.getBySlug(requireParam(req, "slug"));
   res.status(200).json({ business });
 };
 
@@ -57,6 +55,8 @@ export const listAllBusinesses = async (req: Request, res: Response) => {
 
 export const getBusinessById = async (req: Request, res: Response) => {
   const business = await businessService.getById(
+    requireUserId(req),
+    req.user!.role,
     requireParam(req, "businessId"),
   );
   res.status(200).json({ business });

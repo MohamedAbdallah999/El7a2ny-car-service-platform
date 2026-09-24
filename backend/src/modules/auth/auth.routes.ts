@@ -1,6 +1,5 @@
 import { Router } from "express";
 import {
-  createAdminInvitation,
   forgotPassword,
   getMe,
   login,
@@ -12,17 +11,14 @@ import {
   verifyLogin,
   verifyRegistration,
 } from "./auth.controller.js";
-import { authenticate, authorize } from "../../middleware/auth.middleware.js";
+import { authenticate } from "../../middleware/auth.middleware.js";
 import { validateBody } from "../../middleware/validation.middleware.js";
 import {
   loginLimiter,
   registrationLimiter,
   verificationLimiter,
 } from "../../middleware/rate-limit.middleware.js";
-import { UserRole } from "../../generated/prisma/client.js";
 import {
-  adminInvitationSchema,
-  adminRegistrationSchema,
   forgotPasswordSchema,
   loginSchema,
   loginVerificationSchema,
@@ -54,7 +50,7 @@ router.post(
 router.post(
   "/admin/register",
   registrationLimiter,
-  validateBody(adminRegistrationSchema, "Invalid registration data", true),
+  validateBody(registerSchema, "Invalid registration data", true),
   registerAdmin,
 );
 router.post(
@@ -86,13 +82,6 @@ router.post(
   verificationLimiter,
   validateBody(resetPasswordSchema, "Invalid reset data", true),
   resetPassword,
-);
-router.post(
-  "/admin/invitations",
-  authenticate,
-  authorize(UserRole.SUPER_ADMIN),
-  validateBody(adminInvitationSchema, "Invalid invitation data", true),
-  createAdminInvitation,
 );
 router.get("/me", authenticate, getMe);
 router.patch(

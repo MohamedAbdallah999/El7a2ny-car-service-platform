@@ -12,6 +12,23 @@ export interface ListOrdersParams {
   limit?: number;
   status?: string;
 }
+export interface BusinessOrderLine {
+  id: string;
+  orderNumber: string;
+  status: string;
+  createdAt: string;
+  paymentStatus: string;
+  products: string;
+  total: string;
+  currency: string;
+  customer: { user: { firstName: string; lastName: string } };
+  items: Array<{
+    id: string;
+    productId: string;
+    productName: string;
+    quantity: number;
+  }>;
+}
 
 export const createOrdersApi = (client: ApiClient) => ({
   checkout: (payload: CheckoutPayload) =>
@@ -24,6 +41,10 @@ export const createOrdersApi = (client: ApiClient) => ({
     client.request<PaginatedResult<Order>>(
       `/orders/mine${toQueryString(params)}`,
     ),
+  listForBusiness: (params: ListOrdersParams = {}) =>
+    client.request<PaginatedResult<BusinessOrderLine>>(
+      `/orders/business${toQueryString(params)}`,
+    ),
 
   getById: (orderId: string) =>
     client.request<{ order: Order }>(`/orders/${orderId}`),
@@ -32,6 +53,15 @@ export const createOrdersApi = (client: ApiClient) => ({
     client.request<{ order: Order }>(`/orders/${orderId}/status`, {
       method: "PATCH",
       body: JSON.stringify({ status: "CANCELLED" }),
+    }),
+  updateStatus: (orderId: string, status: string) =>
+    client.request<{ order: Order }>(`/orders/${orderId}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    }),
+  processReturn: (orderId: string) =>
+    client.request<{ order: Order }>(`/orders/${orderId}/return`, {
+      method: "POST",
     }),
 });
 

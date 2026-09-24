@@ -8,6 +8,7 @@ build/
 coverage/
 .turbo/
 *.tsbuildinfo
+backend/uploads/
 
 # Environment files
 .env

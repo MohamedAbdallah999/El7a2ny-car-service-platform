@@ -17,6 +17,7 @@ import disputeRoutes from "../modules/dispute/dispute.routes.js";
 import supportRoutes from "../modules/support/support.routes.js";
 import financialRoutes from "../modules/financial/financial.routes.js";
 import platformAdminRoutes from "../modules/platform-admin/platform-admin.routes.js";
+import dashboardRoutes from "../modules/dashboard/dashboard.routes.js";
 
 const router = Router();
 
@@ -38,5 +39,6 @@ router.use("/disputes", disputeRoutes);
 router.use("/support", supportRoutes);
 router.use("/financial", financialRoutes);
 router.use("/platform-admin", platformAdminRoutes);
+router.use("/dashboard", dashboardRoutes);
 
 export default router;
